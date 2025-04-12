@@ -28,13 +28,42 @@ export default function RewardsPage() {
         try {
           setIsLoading(true);
           
-          // Get token balance
-          const tokenBalance = await getTokenBalance(address, provider);
-          setBalance(tokenBalance);
+          // Get token balance with error handling
+          try {
+            const tokenBalanceResult = await getTokenBalance(address, provider);
+            if (tokenBalanceResult.success && tokenBalanceResult.balance) {
+              // Convert the return object to a string explicitly
+              const balanceStr = String(tokenBalanceResult.balance); 
+              setBalance(balanceStr);
+            } else {
+              console.warn("Invalid token balance:", tokenBalanceResult);
+              setBalance('0');
+            }
+          } catch (error) {
+            console.error("Error getting token balance:", error);
+            setBalance('0');
+          }
           
-          // Get staking info
-          const staking = await getStakingInfo(address, provider);
-          setStakingInfo(staking);
+          // Get staking info with error handling
+          try {
+            const stakingInfo = await getStakingInfo(address, provider);
+            setStakingInfo(stakingInfo || { 
+              stakedAmount: '0', 
+              totalStaked: '0', 
+              rewardRate: '0', 
+              pendingRewards: '0', 
+              lastStakedAt: Date.now()
+            });
+          } catch (error) {
+            console.error("Error getting staking info:", error);
+            setStakingInfo({ 
+              stakedAmount: '0', 
+              totalStaked: '0', 
+              rewardRate: '0', 
+              pendingRewards: '0', 
+              lastStakedAt: Date.now()
+            });
+          }
           
           // Calculate APR with error handling
           try {
@@ -103,13 +132,42 @@ export default function RewardsPage() {
           description: "Your rewards have been claimed successfully.",
         });
         
-        // Refresh staking info
-        const newStakingInfo = await getStakingInfo(address!, provider!);
-        setStakingInfo(newStakingInfo);
+        // Refresh staking info with error handling
+        try {
+          const newStakingInfo = await getStakingInfo(address!, provider!);
+          setStakingInfo(newStakingInfo || { 
+            stakedAmount: '0', 
+            totalStaked: '0', 
+            rewardRate: '0', 
+            pendingRewards: '0', 
+            lastStakedAt: Date.now()
+          });
+        } catch (error) {
+          console.error("Error refreshing staking info:", error);
+          setStakingInfo({ 
+            stakedAmount: '0', 
+            totalStaked: '0', 
+            rewardRate: '0', 
+            pendingRewards: '0', 
+            lastStakedAt: Date.now()
+          });
+        }
         
-        // Refresh balance
-        const newBalance = await getTokenBalance(address!, provider!);
-        setBalance(newBalance);
+        // Refresh balance with error handling
+        try {
+          const tokenBalanceResult = await getTokenBalance(address!, provider!);
+          if (tokenBalanceResult.success && tokenBalanceResult.balance) {
+            // Convert the return object to a string explicitly
+            const balanceStr = String(tokenBalanceResult.balance);
+            setBalance(balanceStr);
+          } else {
+            console.warn("Invalid token balance after claiming:", tokenBalanceResult);
+            // Balance stays the same
+          }
+        } catch (error) {
+          console.error("Error refreshing balance after claiming:", error);
+          // Balance stays the same
+        }
       } else {
         toast({
           title: "Claim Failed",
@@ -320,13 +378,36 @@ export default function RewardsPage() {
         onClose={() => setIsStakeModalOpen(false)}
         stakingInfo={stakingInfo}
         onStakingComplete={async () => {
-          // Refresh staking info
-          const newStakingInfo = await getStakingInfo(address!, provider!);
-          setStakingInfo(newStakingInfo);
+          // Refresh staking info with error handling
+          try {
+            const newStakingInfo = await getStakingInfo(address!, provider!);
+            setStakingInfo(newStakingInfo || { 
+              stakedAmount: '0', 
+              totalStaked: '0', 
+              rewardRate: '0', 
+              pendingRewards: '0', 
+              lastStakedAt: Date.now()
+            });
+          } catch (error) {
+            console.error("Error refreshing staking info after staking:", error);
+            // Keep current staking info
+          }
           
-          // Refresh balance
-          const newBalance = await getTokenBalance(address!, provider!);
-          setBalance(newBalance);
+          // Refresh balance with error handling
+          try {
+            const tokenBalanceResult = await getTokenBalance(address!, provider!);
+            if (tokenBalanceResult.success && tokenBalanceResult.balance) {
+              // Convert the return object to a string explicitly
+              const balanceStr = String(tokenBalanceResult.balance);
+              setBalance(balanceStr);
+            } else {
+              console.warn("Invalid token balance after staking:", tokenBalanceResult);
+              // Balance stays the same
+            }
+          } catch (error) {
+            console.error("Error refreshing balance after staking:", error);
+            // Balance stays the same
+          }
         }}
       />
     </div>
