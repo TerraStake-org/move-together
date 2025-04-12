@@ -12,13 +12,17 @@ import MovementIntensityIndicator from '@/components/MovementIntensityIndicator'
 import VoiceCommandModal from '@/components/modals/VoiceCommandModal';
 import StakeModal from '@/components/modals/StakeModal';
 import RewardDetailsModal from '@/components/modals/RewardDetailsModal';
+import LocationNFTMinter from '@/components/nft/LocationNFTMinter';
+import LocationNFTCollection from '@/components/nft/LocationNFTCollection';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { calculateReward, calculateStreakBonus, calculateTimeBonus } from '@/lib/utils';
 import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
+import { MintedNFT } from '@/web3/LocationNFT';
 import { useQuery } from '@tanstack/react-query';
+import { Camera, Map as MapIcon } from 'lucide-react';
 
 interface MoveStats {
   distance: number;
@@ -28,13 +32,16 @@ interface MoveStats {
 
 export default function MapView() {
   const { location, isTracking, totalDistance, startTracking, stopTracking, error: locationError } = useLocation();
-  const { address, signer, isConnected, connect } = useWeb3();
+  const { address, signer, isConnected, connect, provider } = useWeb3();
   const { toast } = useToast();
 
   const [mapType, setMapType] = useState<'modern' | 'real-time'>('modern');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const [isRewardDetailsModalOpen, setIsRewardDetailsModalOpen] = useState(false);
+  const [isNFTMinterOpen, setIsNFTMinterOpen] = useState(false);
+  const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
+  const [mintedNFTs, setMintedNFTs] = useState<MintedNFT[]>([]);
   const [moveStats, setMoveStats] = useState<MoveStats>({
     distance: 0,
     duration: 0,
@@ -180,6 +187,52 @@ export default function MapView() {
       });
     }
   };
+  
+  // Handle NFT minting
+  const handleMintNFT = () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to mint NFTs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!location) {
+      toast({
+        title: "Location Required",
+        description: "Enable location tracking to mint your current location.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsNFTMinterOpen(true);
+  };
+  
+  // Handle NFT collection view
+  const handleViewCollection = () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to view your NFT collection.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsNFTCollectionOpen(true);
+  };
+  
+  // Handle successful NFT mint
+  const handleNFTMinted = (nft: MintedNFT) => {
+    setMintedNFTs(prev => [...prev, nft]);
+    toast({
+      title: "Location NFT Minted!",
+      description: `"${nft.metadata.name}" has been added to your collection.`,
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-dark text-light-gray">
@@ -255,6 +308,29 @@ export default function MapView() {
         {/* Voice Command Button */}
         <div className="absolute bottom-24 left-4">
           <VoiceCommandButton position="relative" variant="secondary" />
+        </div>
+        
+        {/* Map Controls */}
+        <div className="absolute top-20 right-4 flex flex-col gap-2">
+          {/* NFT Mint Button */}
+          <Button
+            variant="secondary"
+            className="p-3 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+            onClick={handleMintNFT}
+            title="Mint Location NFT"
+          >
+            <Camera className="h-5 w-5" />
+          </Button>
+          
+          {/* NFT Collection Button */}
+          <Button
+            variant="secondary"
+            className="p-3 rounded-full shadow-lg bg-dark-gray hover:bg-dark-gray/90"
+            onClick={handleViewCollection}
+            title="View NFT Collection"
+          >
+            <MapIcon className="h-5 w-5" />
+          </Button>
         </div>
         
         {/* Tracking Button */}
