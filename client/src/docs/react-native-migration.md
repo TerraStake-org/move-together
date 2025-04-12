@@ -219,109 +219,144 @@ const setupBackgroundTracking = async () => {
 The web version uses a custom canvas-based implementation with manual path drawing.
 
 ### React Native Implementation
-A complete implementation is available in `client/src/docs/RealTimeLocationMapRN-mock.tsx`, which demonstrates:
+A complete implementation is available in `client/src/docs/CustomMapRN.tsx`, which demonstrates:
 
-1. Map display with react-native-maps
-2. Location tracking with accuracy circles
-3. Path drawing with Polyline
-4. Performance optimizations
-5. User controls for map type and centering
-6. Tracking session statistics
+1. Visually stunning map with custom styling and dark mode
+2. Real-time location tracking with animated markers
+3. Path visualization and heatmap for frequently visited areas
+4. Distance markers placed at kilometer intervals
+5. Points of interest with custom icons
+6. Comprehensive UI controls for user interaction
 
-The core implementation includes:
+The map includes these advanced visual features:
 
 ```javascript
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import MapView, { Marker, Polyline, Circle } from 'react-native-maps';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  View, StyleSheet, Dimensions, TouchableOpacity, 
+  Text, Animated
+} from 'react-native';
+import MapView, {
+  Marker, Polyline, Circle, Heatmap, 
+  PROVIDER_GOOGLE, Callout
+} from 'react-native-maps';
+import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRealTimeLocationRN } from '../hooks/useRealTimeLocationRN';
 
-const RealTimeLocationMap = () => {
-  // Get location data from our custom hook
-  const { location, locationHistory, isTracking } = useRealTimeLocationRN();
+const CustomMapRN = () => {
+  // State and refs
+  const { location, locationHistory, totalDistance, isTracking } = useRealTimeLocationRN();
+  const [darkMode, setDarkMode] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const mapRef = useRef(null);
   
-  // Keep a reference to the map
-  const mapRef = useRef<MapView>(null);
+  // Animated values for marker pulsing effect
+  const pulseAnim = useRef(new Animated.Value(0.5)).current;
   
-  // Center map when location changes
+  // Start pulse animation
   useEffect(() => {
-    if (!location || !mapRef.current) return;
-    
-    mapRef.current.animateToRegion({
-      latitude: location.latitude,
-      longitude: location.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01
-    }, 500);
-  }, [location]);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.5,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
   
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        customMapStyle={darkMode ? darkMapStyle : lightMapStyle}
         showsUserLocation={true}
-        followsUserLocation={true}
-        initialRegion={{
-          latitude: location?.latitude || 0,
-          longitude: location?.longitude || 0,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01
-        }}
+        showsCompass={true}
+        showsScale={true}
       >
-        {/* Current location marker */}
-        {location && (
-          <Marker
-            coordinate={{
-              latitude: location.latitude, 
-              longitude: location.longitude
-            }}
-            title="Current Location"
-          />
+        {/* Starting point marker */}
+        {locationHistory && locationHistory.length > 0 && (
+          <Marker coordinate={locationHistory[0]}>
+            <View style={styles.startMarker}>
+              <FontAwesome5 name="flag-checkered" size={24} color="#000000" />
+            </View>
+          </Marker>
         )}
         
-        {/* Location accuracy circle */}
+        {/* Current location with pulsing effect */}
         {location && (
-          <Circle
-            center={{
-              latitude: location.latitude,
-              longitude: location.longitude
-            }}
-            radius={10} // Accuracy in meters
-            fillColor="rgba(59, 130, 246, 0.2)"
-            strokeColor="rgba(59, 130, 246, 0.5)"
-            strokeWidth={1}
-          />
+          <Marker coordinate={location}>
+            <Animated.View style={[
+              styles.currentLocationMarker,
+              { transform: [{ scale: pulseAnim }] }
+            ]}>
+              <View style={styles.currentLocationDot} />
+            </Animated.View>
+          </Marker>
         )}
         
         {/* Path line */}
-        {locationHistory.length > 1 && (
+        {locationHistory && locationHistory.length > 1 && (
           <Polyline
-            coordinates={locationHistory.map(loc => ({
-              latitude: loc.latitude,
-              longitude: loc.longitude
-            }))}
-            strokeColor="#3b82f6"
+            coordinates={locationHistory}
             strokeWidth={4}
+            strokeColor="#3b82f6"
+            lineCap="round"
+            lineJoin="round"
+          />
+        )}
+        
+        {/* Heatmap for frequently visited areas */}
+        {showHeatmap && (
+          <Heatmap
+            points={generateHeatmapPoints(locationHistory)}
+            radius={40}
+            opacity={0.7}
+            gradient={{
+              colors: ["#00ffff", "#0000ff", "#ff0000"],
+              startPoints: [0.1, 0.5, 0.9],
+            }}
           />
         )}
       </MapView>
       
-      {/* Controls, stats, and action buttons would go here */}
+      {/* Map controls, stats panel, and action buttons */}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-});
 ```
+
+The map supports custom styling for both light and dark modes:
+
+```javascript
+// Dark mode styling example (partial)
+const darkMapStyle = [
+  {
+    "elementType": "geometry",
+    "stylers": [{ "color": "#212121" }]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#000000" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#2c2c2c" }]
+  },
+  // More style elements...
+];
+```
+
+For a basic implementation with fewer visual features, see `client/src/docs/RealTimeLocationMapRN-mock.tsx`.
 
 ## UI Components
 
