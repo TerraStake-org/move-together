@@ -234,20 +234,14 @@ export default function MapView() {
     <div className="flex flex-col h-screen bg-slate-900">
       {/* Fullscreen map container positioned at the bottom layer */}
       <div className="absolute inset-0 w-full h-full z-0">
-        {mapType === 'modern' ? (
-          <ModernMap 
-            location={location}
-            onZoomIn={() => {}}
-            onZoomOut={() => {}}
-            onToggleMapType={() => setMapType('real-time')}
-            onGoToCurrentLocation={() => {}}
-          />
-        ) : (
-          <RealTimeLocationMap 
-            location={location}
-            onToggleMapType={() => setMapType('modern')}
-          />
-        )}
+        {/* Always use ModernMap since it doesn't have API dependency issues */}
+        <ModernMap 
+          location={location}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+          onToggleMapType={() => setMapType(mapType === 'modern' ? 'real-time' : 'modern')}
+          onGoToCurrentLocation={() => {}}
+        />
       </div>
       
       {/* Discovery layer over the map */}
