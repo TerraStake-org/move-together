@@ -39,6 +39,7 @@ function Router() {
         <Route path="/wallet" component={WalletScreen} />
         <Route path="/rewards" component={RewardsPage} />
         <Route path="/profile" component={ProfilePage} /> {/* Settings equivalent in the web version */}
+        <Route path="/voice-settings" component={VoiceSettings} />
         <Route component={NotFound} />
       </Switch>
       <BottomNavigation activeTab={activeTab} />

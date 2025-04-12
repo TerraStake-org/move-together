@@ -12,6 +12,7 @@ import StakeModal from '@/components/modals/StakeModal';
 import RewardDetailsModal from '@/components/modals/RewardDetailsModal';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { calculateReward, calculateStreakBonus, calculateTimeBonus } from '@/lib/utils';
 import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
@@ -250,13 +251,9 @@ export default function MapView() {
         )}
         
         {/* Voice Command Button */}
-        <Button
-          variant="secondary"
-          className="absolute bottom-24 left-4 bg-accent hover:bg-accent/90 p-3 rounded-full shadow-lg"
-          onClick={() => setIsVoiceModalOpen(true)}
-        >
-          <span className="material-icons">mic</span>
-        </Button>
+        <div className="absolute bottom-24 left-4">
+          <VoiceCommandButton position="relative" variant="secondary" />
+        </div>
         
         {/* Tracking Button */}
         <Button

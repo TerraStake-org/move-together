@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useWeb3 } from '@/context/Web3Context';
 import useTts from '@/hooks/useTts';
+import { Link } from 'wouter';
 import { formatAddress } from '@/lib/utils';
 import { User } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
@@ -225,7 +226,15 @@ export default function ProfilePage() {
           
           {/* Voice Selection */}
           <div className="space-y-2">
-            <Label htmlFor="voice">Voice</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="voice">Voice</Label>
+              <Link href="/voice-settings">
+                <Button variant="link" size="sm" className="text-primary hover:text-primary/90 -mt-1 px-0">
+                  <span className="material-icons text-sm mr-1">mic</span>
+                  Voice Commands
+                </Button>
+              </Link>
+            </div>
             <Select 
               value={selectedVoice || ''} 
               onValueChange={handleVoiceChange} 
