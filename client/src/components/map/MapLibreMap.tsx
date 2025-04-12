@@ -7,6 +7,19 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 const mapStyle: StyleSpecification = {
   version: 8,
   sources: {
+    // Use OSM raster tiles as a fallback since our MBTiles file doesn't have worldwide coverage
+    osm: {
+      type: 'raster',
+      tiles: [
+        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+      maxzoom: 19
+    },
+    // Keep our vector tiles as an option
     vectorTiles: {
       type: 'vector',
       tiles: [window.location.origin + "/map/tiles/{z}/{x}/{y}.pbf"],
@@ -20,60 +33,18 @@ const mapStyle: StyleSpecification = {
       type: 'background',
       paint: { 'background-color': '#121212' }
     },
+    // Use the OSM raster tiles as base layer
     {
-      id: 'landcover',
-      type: 'fill',
-      source: 'vectorTiles',
-      'source-layer': 'landcover',
-      paint: { 'fill-color': '#1a4d2e' }
-    },
-    {
-      id: 'water',
-      type: 'fill',
-      source: 'vectorTiles',
-      'source-layer': 'water',
-      paint: { 'fill-color': '#183446' }
-    },
-    {
-      id: 'roads-major',
-      type: 'line',
-      source: 'vectorTiles',
-      'source-layer': 'transportation',
-      filter: ['all', ['in', 'class', 'primary', 'secondary', 'trunk', 'motorway']],
-      paint: { 
-        'line-color': '#414f5c', 
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          10, 1.5,
-          16, 8
-        ]
+      id: 'osm-tiles',
+      type: 'raster',
+      source: 'osm',
+      paint: {
+        'raster-opacity': 0.8,
+        'raster-brightness-min': 0.2,
+        'raster-brightness-max': 0.9,
+        'raster-saturation': -0.5,
+        'raster-contrast': 0.1
       }
-    },
-    {
-      id: 'roads-minor',
-      type: 'line',
-      source: 'vectorTiles',
-      'source-layer': 'transportation',
-      filter: ['all', ['in', 'class', 'tertiary', 'residential', 'service']],
-      paint: { 
-        'line-color': '#2d3741', 
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          13, 0.5,
-          16, 4
-        ] 
-      }
-    },
-    {
-      id: 'buildings',
-      type: 'fill',
-      source: 'vectorTiles',
-      'source-layer': 'building',
-      paint: { 'fill-color': '#1c2733', 'fill-opacity': 0.85 }
     }
   ]
 };

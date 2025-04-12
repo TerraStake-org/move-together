@@ -165,10 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize and register the map tile server
   try {
-    // Use path.resolve with import.meta.url to get the correct file path in ES modules
-    const currentFilePath = new URL(import.meta.url).pathname;
-    const projectRoot = path.resolve(path.dirname(currentFilePath), '..');
-    const tilesPath = path.join(projectRoot, 'tiles/world.mbtiles');
+    // Path to the mbtiles file - using absolute path for reliability
+    const tilesPath = path.join(process.cwd(), 'tiles', 'world.mbtiles');
     
     const tileRouter = await initializeTileServer(tilesPath);
     app.use('/map', tileRouter);
