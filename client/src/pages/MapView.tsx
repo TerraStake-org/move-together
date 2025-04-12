@@ -46,6 +46,7 @@ export default function MapView() {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isNFTMinterOpen, setIsNFTMinterOpen] = useState(false);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [rewardBreakdown, setRewardBreakdown] = useState<any>({
     baseReward: 0,
     timeBonus: 0,
@@ -231,9 +232,9 @@ export default function MapView() {
   };
   
   return (
-    <div className="flex flex-col h-screen bg-slate-900">
+    <div className="relative h-screen w-full overflow-hidden bg-slate-900">
       {/* Fullscreen map container positioned at the bottom layer */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      <div className="absolute inset-0 z-0">
         {mapType === 'offline' ? (
           <MapLibreMap 
             location={location}
@@ -250,66 +251,93 @@ export default function MapView() {
         )}
       </div>
       
-      {/* Discovery layer over the map */}
+      {/* Place discovery layer (shows nearby points of interest) */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         <DiscoveryLayer />
       </div>
       
-      {/* Top navigation bar */}
-      <div className="relative z-20 w-full">
-        <div className="flex justify-center py-2">
-          <div className="bg-slate-800/90 backdrop-blur-sm rounded-full p-1">
-            <div className="flex">
-              <Button 
-                variant={mapType === 'modern' ? "default" : "outline"} 
-                size="sm" 
-                className={`rounded-full ${mapType === 'modern' ? 'bg-emerald-500 hover:bg-emerald-600' : 'text-slate-400'}`}
-                onClick={() => setMapType('modern')}
-              >
-                Modern
-              </Button>
-              <Button 
-                variant={mapType === 'real-time' ? "default" : "outline"} 
-                size="sm" 
-                className={`rounded-full ${mapType === 'real-time' ? 'bg-blue-800 hover:bg-blue-700' : 'text-slate-400'}`}
-                onClick={() => setMapType('real-time')}
-              >
-                Real-Time
-              </Button>
-              <Button 
-                variant={mapType === 'offline' ? "default" : "outline"} 
-                size="sm" 
-                className={`rounded-full ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-800' : 'text-slate-400'}`}
-                onClick={() => {
-                  console.log("Switching to offline mode");
-                  setMapType('offline');
-                }}
-              >
-                Offline
-              </Button>
-            </div>
+      {/* Fixed Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 h-14 flex items-center px-4">
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-slate-800 -ml-2"
+              onClick={() => window.history.back()}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+              <span className="ml-1">Back</span>
+            </Button>
+          </div>
+          <h1 className="text-lg font-medium text-white absolute left-1/2 transform -translate-x-1/2">MOVE Tracker</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-300 hover:bg-slate-800"
+            onClick={() => setShowSettings(!showSettings)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </Button>
+        </div>
+      </div>
+      
+      {/* Map Type Selector - below fixed navbar */}
+      <div className="fixed top-14 left-0 right-0 z-40 py-3 bg-gradient-to-b from-slate-900/70 to-transparent">
+        <div className="flex justify-center">
+          <div className="inline-flex bg-black/50 backdrop-blur-sm rounded-full p-1 shadow-lg border border-slate-800/50">
+            <Button 
+              variant={mapType === 'modern' ? "default" : "outline"} 
+              size="sm" 
+              className={`rounded-full ${mapType === 'modern' ? 'bg-slate-700 hover:bg-slate-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              onClick={() => setMapType('modern')}
+            >
+              Modern
+            </Button>
+            <Button 
+              variant={mapType === 'real-time' ? "default" : "outline"} 
+              size="sm" 
+              className={`rounded-full ${mapType === 'real-time' ? 'bg-blue-800 hover:bg-blue-700' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              onClick={() => setMapType('real-time')}
+            >
+              Real-Time
+            </Button>
+            <Button 
+              variant={mapType === 'offline' ? "default" : "outline"} 
+              size="sm" 
+              className={`rounded-full ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              onClick={() => {
+                console.log("Switching to offline mode");
+                setMapType('offline');
+              }}
+            >
+              Offline
+            </Button>
           </div>
         </div>
-        
       </div>
 
-      {/* Dashboard container with grid layout to prevent overlapping */}
-      <div className="absolute inset-x-0 top-0 pt-16 pb-20 z-30">
-        {/* Top section with movement intensity */}
-        <div className="mx-4 mb-4">
-          <MovementIntensityIndicator />
-        </div>
-        
-        {/* Stats grid layout - better organization */}
-        <div className="grid grid-cols-2 gap-3 px-4 mt-6">
+      {/* Dashboard content - Movement intensity indicator */}
+      <div className="fixed top-28 left-0 right-0 z-30 px-4">
+        <MovementIntensityIndicator />
+      </div>
+      
+      {/* Stats Dashboard - well spaced and organized with gap */}
+      <div className="fixed top-[265px] left-0 right-0 z-30 px-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Left column */}
           <div className="space-y-3">
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-800">
+            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
               <h4 className="text-xs text-slate-400 font-medium">Distance</h4>
               <p className="text-xl font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-sm text-slate-400">km</span></p>
             </div>
             
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-800">
+            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
               <h4 className="text-xs text-slate-400 font-medium">Pace</h4>
               <p className="text-xl font-bold text-white">{formatPace(moveStats.pace)}</p>
             </div>
@@ -317,12 +345,12 @@ export default function MapView() {
           
           {/* Right column */}
           <div className="space-y-3">
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-800">
+            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
               <h4 className="text-xs text-slate-400 font-medium">Duration</h4>
               <p className="text-xl font-bold text-white">{formatDuration(moveStats.duration)}</p>
             </div>
             
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-800">
+            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
               <h4 className="text-xs text-slate-400 font-medium">Status</h4>
               <div className="flex items-center">
                 {isTracking ? (
@@ -345,32 +373,32 @@ export default function MapView() {
         </div>
       </div>
       
-      {/* Right floating action buttons */}
-      <div className="absolute right-4 top-28 z-20 flex flex-col gap-3">
-        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsNFTMinterOpen(true)}>
-          <Camera size={20} />
+      {/* Side action buttons - moved to avoid overlapping */}
+      <div className="fixed right-4 top-[420px] z-30 flex flex-col gap-3">
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-11 w-11 shadow-lg" onClick={() => setIsNFTMinterOpen(true)}>
+          <Camera size={18} />
         </Button>
         
-        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsNFTCollectionOpen(true)}>
-          <AwardIcon size={20} />
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-11 w-11 shadow-lg" onClick={() => setIsNFTCollectionOpen(true)}>
+          <AwardIcon size={18} />
         </Button>
         
-        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsVoiceModalOpen(true)}>
-          <Headphones size={20} />
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-11 w-11 shadow-lg" onClick={() => setIsVoiceModalOpen(true)}>
+          <Headphones size={18} />
         </Button>
       </div>
       
-      {/* Voice command floating button */}
-      <div className="absolute left-4 bottom-44 z-20">
+      {/* Voice command button - positioned away from other buttons */}
+      <div className="fixed left-4 bottom-28 z-30">
         <VoiceCommandButton position="relative" variant="secondary" />
       </div>
       
-      {/* Stake button */}
-      <div className="absolute right-4 bottom-32 z-20">
+      {/* Stake button - moved higher to avoid overlapping */}
+      <div className="fixed right-4 bottom-28 z-30">
         <Button 
           size="sm" 
           variant="outline"
-          className="rounded-full bg-black/70 hover:bg-black/90 text-white border-slate-700"
+          className="rounded-full bg-black/70 hover:bg-black/90 text-white border-slate-700 shadow-lg"
           onClick={() => setIsStakeModalOpen(true)}
         >
           <Coin size={16} className="mr-2" />
@@ -378,31 +406,31 @@ export default function MapView() {
         </Button>
       </div>
       
-      {/* Tracking controls at bottom */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+      {/* Tracking controls at bottom - above navbar */}
+      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-30">
         {isTracking ? (
           <Button 
             size="lg" 
             variant="destructive"
-            className="rounded-full h-16 w-16 shadow-lg"
+            className="rounded-full h-14 w-14 shadow-lg"
             onClick={handleStopTracking}
           >
-            <Square size={24} />
+            <Square size={20} />
           </Button>
         ) : (
           <Button 
             size="lg" 
             variant="default"
-            className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 shadow-lg"
+            className="rounded-full h-14 w-14 bg-emerald-500 hover:bg-emerald-600 shadow-lg"
             onClick={handleStartTracking}
           >
-            <Play size={24} />
+            <Play size={20} />
           </Button>
         )}
       </div>
       
       {/* Bottom navigation bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-900/90 backdrop-blur-sm z-20 border-t border-slate-800">
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-900/90 backdrop-blur-sm z-40 border-t border-slate-800 shadow-lg">
         <div className="flex items-center justify-around h-full">
           <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
             <MapIcon size={20} className="text-red-500" />
@@ -423,7 +451,7 @@ export default function MapView() {
         </div>
       </div>
       
-      {/* MODALS */}
+      {/* MODALS - Increased z-index to ensure they show above all other elements */}
       <VoiceCommandModal 
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
