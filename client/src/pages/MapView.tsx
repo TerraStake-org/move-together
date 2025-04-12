@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext';
 import { useWeb3 } from '@/context/Web3Context';
+import { useTheme } from '@/context/ThemeContext';
 import ModernMap from '@/components/map/ModernMap';
 import RealTimeLocationMap from '@/components/map/RealTimeLocationMap';
 import ActivityStats from '@/components/ActivityStats';
 import TokenOverview from '@/components/TokenOverview';
 import Achievements from '@/components/Achievements';
 import NextMilestone from '@/components/NextMilestone';
+import MovementIntensityIndicator from '@/components/MovementIntensityIndicator';
 import VoiceCommandModal from '@/components/modals/VoiceCommandModal';
 import StakeModal from '@/components/modals/StakeModal';
 import RewardDetailsModal from '@/components/modals/RewardDetailsModal';
@@ -267,6 +269,9 @@ export default function MapView() {
       
       {/* STATS DASHBOARD */}
       <div className="flex-grow bg-dark px-4 py-6 -mt-2 rounded-t-3xl shadow-lg">
+        
+        {/* Movement Intensity Indicator - NEW */}
+        <MovementIntensityIndicator />
         
         {/* Activity Stats */}
         <ActivityStats 
