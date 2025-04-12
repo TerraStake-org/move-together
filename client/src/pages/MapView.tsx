@@ -280,7 +280,10 @@ export default function MapView() {
                 variant={mapType === 'offline' ? "default" : "outline"} 
                 size="sm" 
                 className={`rounded-full ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-800' : 'text-slate-400'}`}
-                onClick={() => setMapType('offline')}
+                onClick={() => {
+                  console.log("Switching to offline mode");
+                  setMapType('offline');
+                }}
               >
                 Offline
               </Button>
