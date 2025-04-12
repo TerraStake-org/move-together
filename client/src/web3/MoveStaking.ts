@@ -4,7 +4,7 @@ import { getContractAddress } from './TokenMinter';
 
 export const getStakingInfo = async (userAddress: string, provider: ethers.Provider) => {
   try {
-    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI.abi, provider);
+    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI, provider);
     
     // Get user's staking info
     const stakeInfo = await contract.stakes(userAddress);
@@ -30,7 +30,7 @@ export const getStakingInfo = async (userAddress: string, provider: ethers.Provi
 export const stakeTokens = async (amount: number, signer: ethers.JsonRpcSigner) => {
   try {
     const tokenAmount = ethers.parseUnits(amount.toString(), 18);
-    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI.abi, signer);
+    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI, signer);
     
     const tx = await contract.stake(tokenAmount);
     const receipt = await tx.wait();
@@ -52,7 +52,7 @@ export const stakeTokens = async (amount: number, signer: ethers.JsonRpcSigner) 
 export const unstakeTokens = async (amount: number, signer: ethers.JsonRpcSigner) => {
   try {
     const tokenAmount = ethers.parseUnits(amount.toString(), 18);
-    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI.abi, signer);
+    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI, signer);
     
     const tx = await contract.unstake(tokenAmount);
     const receipt = await tx.wait();
@@ -73,7 +73,7 @@ export const unstakeTokens = async (amount: number, signer: ethers.JsonRpcSigner
 
 export const claimRewards = async (signer: ethers.JsonRpcSigner) => {
   try {
-    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI.abi, signer);
+    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI, signer);
     
     // To claim rewards, we can either stake 0 tokens or unstake 0 tokens
     // Let's use the stake function with 0 amount
@@ -97,7 +97,7 @@ export const claimRewards = async (signer: ethers.JsonRpcSigner) => {
 // Calculate APR based on reward rate
 export const calculateAPR = async (provider: ethers.Provider) => {
   try {
-    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI.abi, provider);
+    const contract = new ethers.Contract(getContractAddress(), MoveTokenABI, provider);
     
     const rewardRatePerSecond = await contract.rewardRatePerSecond();
     const totalStaked = await contract.totalStaked();

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import MapView from "@/pages/MapView";
 import ActivityPage from "@/pages/ActivityPage";
-import WalletScreen from "@/pages/WalletScreen";
+import WalletScreen from "@/screens/WalletScreen";
 import RewardsPage from "@/pages/RewardsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import BottomNavigation from "@/components/ui/BottomNavigation";

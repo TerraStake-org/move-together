@@ -1,308 +1,210 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { stakeTokens, unstakeTokens } from '@/web3/TokenMinter';
 import { useWeb3 } from '@/context/Web3Context';
-import { getTokenBalance } from '@/web3/TokenMinter';
-import { stakeTokens, unstakeTokens } from '@/web3/MoveStaking';
-import { formatTokenAmount } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface StakeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  stakingInfo: any;
-  onStakingComplete: () => void;
+  availableBalance: string;
+  currentlyStaked: string;
+  onSuccess: () => void;
+  mode: 'stake' | 'unstake';
 }
 
 export default function StakeModal({ 
   isOpen, 
   onClose, 
-  stakingInfo,
-  onStakingComplete 
+  availableBalance, 
+  currentlyStaked,
+  onSuccess,
+  mode 
 }: StakeModalProps) {
-  const { address, signer, provider, isConnected, connect } = useWeb3();
+  const [amount, setAmount] = useState<string>('0');
+  const [loading, setLoading] = useState(false);
+  const { signer } = useWeb3();
   const { toast } = useToast();
   
-  const [balance, setBalance] = useState<string>('0');
-  const [stakeAmount, setStakeAmount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [maxStakeAmount, setMaxStakeAmount] = useState<number>(0);
-
-  // Fetch token balance when modal opens
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (isOpen && isConnected && address && provider) {
-        try {
-          const tokenBalance = await getTokenBalance(address, provider);
-          setBalance(tokenBalance);
-          setMaxStakeAmount(parseFloat(tokenBalance));
-          
-          // Set initial stake amount to 50% of balance or 0 if no balance
-          const initialAmount = parseFloat(tokenBalance) > 0 
-            ? parseFloat(tokenBalance) / 2 
-            : 0;
-          setStakeAmount(initialAmount);
-        } catch (error) {
-          toast({
-            title: "Failed to load balance",
-            description: "Could not retrieve your token balance.",
-            variant: "destructive",
-          });
-        }
+  const maxAmount = mode === 'stake' 
+    ? parseFloat(availableBalance) 
+    : parseFloat(currentlyStaked);
+  
+  const handleSliderChange = (value: number[]) => {
+    // Value is a percentage of maxAmount
+    const percentage = value[0];
+    const calculatedAmount = (maxAmount * percentage / 100).toFixed(2);
+    setAmount(calculatedAmount);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Allow only numbers and decimals
+    if (!/^[0-9]*\.?[0-9]*$/.test(value) && value !== '') {
+      return;
+    }
+    
+    // Cap at max amount
+    const numValue = parseFloat(value || '0');
+    if (numValue > maxAmount) {
+      value = maxAmount.toString();
+    }
+    
+    setAmount(value);
+  };
+  
+  const handleMaxClick = () => {
+    setAmount(maxAmount.toString());
+  };
+  
+  const handleSubmit = async () => {
+    if (!signer || !amount || parseFloat(amount) <= 0) return;
+    
+    setLoading(true);
+    
+    try {
+      let result;
+      
+      if (mode === 'stake') {
+        result = await stakeTokens(parseFloat(amount), signer);
+      } else {
+        result = await unstakeTokens(parseFloat(amount), signer);
       }
-    };
-
-    fetchBalance();
-  }, [isOpen, isConnected, address, provider, toast]);
-
-  // Handle wallet connection
-  const handleConnectWallet = async () => {
-    try {
-      await connect();
-    } catch (error) {
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect to your wallet.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle stake amount change
-  const handleStakeAmountChange = (value: number[]) => {
-    setStakeAmount(value[0]);
-  };
-
-  // Handle staking tokens
-  const handleStakeTokens = async () => {
-    if (!isConnected || !signer) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet to stake tokens.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (stakeAmount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter an amount greater than 0.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const result = await stakeTokens(stakeAmount, signer);
       
       if (result.success) {
         toast({
-          title: "Tokens Staked",
-          description: `Successfully staked ${stakeAmount.toFixed(2)} MOVE tokens.`,
+          title: `${mode === 'stake' ? 'Staked' : 'Unstaked'} Successfully`,
+          description: `You have successfully ${mode === 'stake' ? 'staked' : 'unstaked'} ${amount} MOVE tokens.`,
         });
+        onSuccess();
         onClose();
-        onStakingComplete();
       } else {
         toast({
-          title: "Staking Failed",
-          description: result.error || "Unknown error occurred",
+          title: "Transaction Failed",
+          description: `Failed to ${mode} tokens. Please try again.`,
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error(`Error ${mode === 'stake' ? 'staking' : 'unstaking'} tokens:`, error);
       toast({
-        title: "Staking Error",
-        description: "There was an error staking your tokens.",
+        title: "Transaction Error",
+        description: `An error occurred while ${mode === 'stake' ? 'staking' : 'unstaking'} tokens.`,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
-
-  // Handle unstaking tokens
-  const handleUnstakeTokens = async () => {
-    if (!isConnected || !signer || !stakingInfo) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your wallet to unstake tokens.",
-        variant: "destructive",
-      });
-      return;
-    }
+  
+  // Calculate what percentage of max the current amount is (for the slider)
+  const sliderValue = maxAmount > 0 
+    ? [(parseFloat(amount) / maxAmount) * 100] 
+    : [0];
     
-    if (stakeAmount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter an amount greater than 0.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const stakedAmount = parseFloat(stakingInfo.stakedAmount);
-    if (stakeAmount > stakedAmount) {
-      toast({
-        title: "Invalid Amount",
-        description: `You only have ${stakedAmount.toFixed(2)} MOVE tokens staked.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const result = await unstakeTokens(stakeAmount, signer);
-      
-      if (result.success) {
-        toast({
-          title: "Tokens Unstaked",
-          description: `Successfully unstaked ${stakeAmount.toFixed(2)} MOVE tokens.`,
-        });
-        onClose();
-        onStakingComplete();
-      } else {
-        toast({
-          title: "Unstaking Failed",
-          description: result.error || "Unknown error occurred",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Unstaking Error",
-        description: "There was an error unstaking your tokens.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-dark-gray border-gray-700 text-light-gray sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-dark-gray text-white border-gray-700 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Stake MOVE Tokens</DialogTitle>
+          <DialogTitle className="text-xl">
+            {mode === 'stake' ? 'Stake' : 'Unstake'} MOVE Tokens
+          </DialogTitle>
           <DialogDescription className="text-gray-400">
-            Stake your tokens to earn rewards based on 12% APR.
+            {mode === 'stake' 
+              ? 'Stake your MOVE tokens to earn rewards over time.' 
+              : 'Withdraw your staked MOVE tokens.'}
           </DialogDescription>
         </DialogHeader>
         
-        {!isConnected ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-gray-400 mb-4">Connect your wallet to stake or unstake tokens</p>
-            <Button 
-              className="bg-primary hover:bg-primary/90"
-              onClick={handleConnectWallet}
-            >
-              Connect Wallet
-            </Button>
+        <div className="space-y-6 py-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-400">
+              {mode === 'stake' ? 'Available Balance' : 'Currently Staked'}:
+            </span>
+            <span className="font-medium">
+              {mode === 'stake' ? availableBalance : currentlyStaked} MOVE
+            </span>
           </div>
-        ) : (
-          <>
-            <div className="bg-dark rounded-lg p-3 mb-4">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm">Available Balance</span>
-                <span className="font-mono">{formatTokenAmount(balance)} MOVE</span>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Input 
+                type="text" 
+                value={amount}
+                onChange={handleInputChange}
+                className="bg-dark border-gray-700 text-right"
+              />
+              <span className="text-gray-400 min-w-[60px]">MOVE</span>
+              <Button 
+                variant="outline"
+                size="sm"
+                className="border-gray-700 text-xs"
+                onClick={handleMaxClick}
+              >
+                MAX
+              </Button>
+            </div>
+            
+            <div className="px-1">
+              <Slider 
+                value={sliderValue} 
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={handleSliderChange}
+                className="mt-6"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span>100%</span>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm">Currently Staked</span>
-                <span className="font-mono">
-                  {stakingInfo ? formatTokenAmount(stakingInfo.stakedAmount) : '0.00'} MOVE
+            </div>
+          </div>
+          
+          {mode === 'stake' && (
+            <div className="bg-dark p-3 rounded-md mt-4 border border-gray-800">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-gray-400">Estimated APR:</span>
+                <span className="text-sm font-medium">12.5%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-400">Rewards (daily):</span>
+                <span className="text-sm font-medium">
+                  {((parseFloat(amount) * 0.125) / 365).toFixed(4)} MOVE
                 </span>
               </div>
             </div>
-            
-            <div className="mb-4">
-              <label className="text-sm mb-2 block">Amount to Stake</label>
-              <div className="space-y-4">
-                <Slider
-                  value={[stakeAmount]}
-                  min={0}
-                  max={maxStakeAmount}
-                  step={0.01}
-                  onValueChange={handleStakeAmountChange}
-                  disabled={isLoading}
-                  className="stake-slider"
-                />
-                <div className="flex justify-between items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStakeAmount(maxStakeAmount / 4)}
-                    disabled={isLoading}
-                    className="border-gray-700"
-                  >
-                    25%
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStakeAmount(maxStakeAmount / 2)}
-                    disabled={isLoading}
-                    className="border-gray-700"
-                  >
-                    50%
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStakeAmount(maxStakeAmount * 0.75)}
-                    disabled={isLoading}
-                    className="border-gray-700"
-                  >
-                    75%
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setStakeAmount(maxStakeAmount)}
-                    disabled={isLoading}
-                    className="border-gray-700"
-                  >
-                    Max
-                  </Button>
-                  <div className="w-24 h-10 bg-dark rounded-lg flex items-center justify-center">
-                    <span className="font-mono">{stakeAmount.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col space-y-3">
-              <Button 
-                className="bg-secondary text-dark font-medium py-3 rounded-lg"
-                onClick={handleStakeTokens}
-                disabled={isLoading || stakeAmount <= 0 || stakeAmount > maxStakeAmount}
-              >
-                {isLoading ? 
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Processing...
-                  </div> : 
-                  'Stake Tokens'
-                }
-              </Button>
-              <Button 
-                className="border border-primary text-primary py-3 rounded-lg"
-                onClick={handleUnstakeTokens}
-                disabled={isLoading || stakeAmount <= 0 || !stakingInfo || stakeAmount > parseFloat(stakingInfo.stakedAmount)}
-              >
-                {isLoading ? 
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                    Processing...
-                  </div> : 
-                  'Unstake Tokens'
-                }
-              </Button>
-            </div>
-          </>
-        )}
+          )}
+        </div>
+        
+        <DialogFooter className="flex gap-3 sm:gap-0">
+          <Button 
+            variant="outline"
+            className="border-gray-700 flex-1"
+            onClick={onClose}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            className={`flex-1 ${mode === 'stake' ? 'bg-green-700 hover:bg-green-600' : 'bg-blue-700 hover:bg-blue-600'}`}
+            onClick={handleSubmit}
+            disabled={loading || parseFloat(amount) <= 0 || parseFloat(amount) > maxAmount}
+          >
+            {loading ? (
+              <span>Processing...</span>
+            ) : (
+              <span>{mode === 'stake' ? 'Stake Tokens' : 'Unstake Tokens'}</span>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
