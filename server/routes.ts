@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { insertUserSchema, insertActivitySchema, insertAchievementSchema, insertMilestoneSchema } from "@shared/schema";
 import { z } from "zod";
 import { processVoiceCommand, getAllVoiceCommands, createVoiceCommand } from "./controllers/voiceCommandController";
+import { initializeTileServer } from "./mapTileServer";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix
@@ -160,6 +162,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register the API router
   app.use("/api", apiRouter);
+
+  // Initialize and register the map tile server
+  try {
+    const tilesPath = path.join(__dirname, '../tiles/world.mbtiles');
+    const tileRouter = await initializeTileServer(tilesPath);
+    app.use('/map', tileRouter);
+    console.log('Map tile server initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize map tile server:', error);
+  }
 
   const httpServer = createServer(app);
 

@@ -1,0 +1,187 @@
+STEP 1: Files to Download
+🔹 1. Download Offline Map Tiles (.mbtiles)
+
+From https://openmaptiles.org/downloads/
+
+Recommended:
+
+    Region: Any city or small country
+
+    Style: Vector tiles
+
+    Zoom: 0–14 (higher zoom = bigger file)
+
+For example:
+
+albania.mbtiles
+
+✅ STEP 2: Setup Tile Server on Replit
+1. 🔧 Create a Replit Web Project
+
+Choose Node.js template.
+2. 📁 Create Folder Structure
+
+/project-root
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+├── tiles/
+│   └── albania.mbtiles
+├── server.js
+├── package.json
+
+3. ✍️ server.js – Tile Server Code
+
+const express = require('express');
+const mbtiles = require('@mapbox/mbtiles');
+const path = require('path');
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.static('public'));
+
+new mbtiles(path.join(__dirname, 'tiles/albania.mbtiles'), (err, mbtilesInstance) => {
+  if (err) throw err;
+
+  app.get('/tiles/:z/:x/:y.pbf', (req, res) => {
+    const { z, x, y } = req.params;
+    mbtilesInstance.getTile(+z, +x, +y, (err, data, headers) => {
+      if (err) {
+        res.status(404).send('Tile not found');
+      } else {
+        res.set(headers);
+        res.send(data);
+      }
+    });
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Tile server running on http://localhost:${PORT}`);
+  });
+});
+
+4. 📦 package.json dependencies
+
+{
+  "name": "offline-map-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@mapbox/mbtiles": "^0.10.0",
+    "express": "^4.18.2"
+  }
+}
+
+✅ STEP 3: Frontend (Map + GPS)
+🔹 public/index.html
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Offline Map</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
+
+🔹 public/style.css
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+🔹 public/script.js
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      vectorTiles: {
+        type: 'vector',
+        tiles: ["http://localhost:3000/tiles/{z}/{x}/{y}.pbf"],
+        minzoom: 0,
+        maxzoom: 14
+      }
+    },
+    layers: [
+      {
+        id: 'background',
+        type: 'background',
+        paint: { 'background-color': '#e0e0e0' }
+      },
+      {
+        id: 'landcover',
+        type: 'fill',
+        source: 'vectorTiles',
+        'source-layer': 'landcover',
+        paint: { 'fill-color': '#88cc88' }
+      },
+      {
+        id: 'roads',
+        type: 'line',
+        source: 'vectorTiles',
+        'source-layer': 'transportation',
+        paint: { 'line-color': '#000', 'line-width': 1 }
+      }
+    ]
+  },
+  center: [20.0, 41.0], // Albania center
+  zoom: 7
+});
+
+// Add GPS tracking
+navigator.geolocation.watchPosition((position) => {
+  const { latitude, longitude } = position.coords;
+  const marker = new maplibregl.Marker().setLngLat([longitude, latitude]).addTo(map);
+  map.flyTo({ center: [longitude, latitude], zoom: 14 });
+});
+
+✅ Run the App on Replit
+
+    Click ▶️ Run
+
+    Open the web preview
+
+    Your offline tile server will serve the map!
+
+    It will load the .mbtiles and render terrain roads, paths, etc.
+
+    GPS will show if browser allows it
+
+📦 Optional Enhancements
+
+    Add routing overlay with OpenRouteService
+
+    Add elevation profile
+
+    Show points of interest (POIs)
+
+    Store user movement and give crypto reward
+
+🔥 Ready to Add Crypto Layer?
+
+Once GPS + map works, I’ll:
+
+    Add your ERC-20 staking reward
+
+    Reward NFT when user reaches certain coordinates
+
+    Save all walks to local or chain
+
