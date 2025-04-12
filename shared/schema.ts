@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, doublePrecision, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -107,3 +108,31 @@ export type Milestone = typeof milestones.$inferSelect;
 
 export type InsertVoiceCommand = z.infer<typeof insertVoiceCommandSchema>;
 export type VoiceCommand = typeof voiceCommands.$inferSelect;
+
+// Define relationships between tables
+export const usersRelations = relations(users, ({ many }) => ({
+  activities: many(activities),
+  achievements: many(achievements),
+  milestones: many(milestones),
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  user: one(users, {
+    fields: [activities.userId],
+    references: [users.id],
+  }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ one }) => ({
+  user: one(users, {
+    fields: [achievements.userId],
+    references: [users.id],
+  }),
+}));
+
+export const milestonesRelations = relations(milestones, ({ one }) => ({
+  user: one(users, {
+    fields: [milestones.userId],
+    references: [users.id],
+  }),
+}));
