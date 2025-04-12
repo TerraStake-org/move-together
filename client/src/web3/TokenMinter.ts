@@ -5,6 +5,21 @@ import MoveTokenABI from '../abis/MoveToken.json';
 const MOVE_TOKEN_ADDRESS = '0x1234567890123456789012345678901234567890'; 
 
 /**
+ * Helper function to safely convert any error to a string
+ */
+const errorToString = (error: any): string => {
+  if (error === null || error === undefined) return 'Unknown error';
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object') {
+    if ('message' in error) return error.message as string;
+    if ('shortMessage' in error) return error.shortMessage as string;
+    return JSON.stringify(error);
+  }
+  return String(error);
+};
+
+/**
  * Returns the MOVE token contract address
  * @returns The contract address for the MOVE token
  */

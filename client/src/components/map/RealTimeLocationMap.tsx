@@ -173,7 +173,7 @@ export default function RealTimeLocationMap() {
     if (error) {
       toast({
         title: 'Location Error',
-        description: error,
+        description: error.toString(),
         variant: 'destructive'
       });
     }
