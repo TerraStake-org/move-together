@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "MOVE",
+    "slug": "move-to-earn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.moveapp.movetolearn",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to track your movement for fitness rewards",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location to track your movement for fitness rewards",
+        "NSLocationAlwaysUsageDescription": "This app uses your location to track your movement for fitness rewards",
+        "UIBackgroundModes": ["location", "fetch"],
+        "NSMicrophoneUsageDescription": "This app uses the microphone for voice commands"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#121212"
+      },
+      "package": "com.moveapp.movetolearn",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MOVE to use your location to track your movement for fitness rewards."
+        }
+      ]
+    ]
+  }
+}
