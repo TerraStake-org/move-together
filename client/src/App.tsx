@@ -8,6 +8,7 @@ import ActivityPage from "@/pages/ActivityPage";
 import WalletScreen from "@/screens/WalletScreen";
 import RewardsPage from "@/pages/RewardsPage";
 import ProfilePage from "@/pages/ProfilePage";
+import VoiceSettings from "@/pages/VoiceSettings";
 import BottomNavigation from "@/components/ui/BottomNavigation";
 import { Web3Provider } from "@/context/Web3Context";
 import { useEffect, useState } from "react";

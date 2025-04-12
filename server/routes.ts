@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertActivitySchema, insertAchievementSchema, insertMilestoneSchema } from "@shared/schema";
 import { z } from "zod";
+import { processVoiceCommand, getAllVoiceCommands, createVoiceCommand } from "./controllers/voiceCommandController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes with /api prefix
@@ -149,11 +150,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Voice command routes
-  apiRouter.get("/voice-commands", async (req, res) => {
-    const language = req.query.language as string || "en-US";
-    const commands = await storage.getVoiceCommands(language);
-    res.json(commands);
-  });
+  apiRouter.get("/voice-commands", getAllVoiceCommands);
+  
+  // Advanced voice command processing with NLP
+  apiRouter.post("/voice-commands/process", processVoiceCommand);
+  
+  // Create new voice commands
+  apiRouter.post("/voice-commands", createVoiceCommand);
   
   // Register the API router
   app.use("/api", apiRouter);
