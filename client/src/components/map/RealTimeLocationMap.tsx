@@ -46,11 +46,15 @@ interface Marker {
   setPosition: (latLng: any) => void;
 }
 
-export default function RealTimeLocationMap() {
+interface RealTimeLocationMapProps {
+  location: { latitude: number; longitude: number } | null;
+  onToggleMapType: () => void;
+}
+
+export default function RealTimeLocationMap({ location, onToggleMapType }: RealTimeLocationMapProps) {
   const { toast } = useToast();
   const { address, signer } = useWeb3();
   const { 
-    location, 
     error, 
     isTracking, 
     totalDistance, 

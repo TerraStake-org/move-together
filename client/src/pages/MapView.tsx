@@ -35,24 +35,18 @@ interface MoveStats {
 }
 
 export default function MapView() {
-  const { location, isTracking, totalDistance, startTracking, stopTracking, error: locationError } = useLocation();
-  const { address, signer, isConnected, connect, provider } = useWeb3();
+  const { location, locations, isTracking, totalDistance, startTracking, stopTracking, error: locationError } = useLocation();
+  const { provider, address, signer, isConnected } = useWeb3();
   const { toast } = useToast();
-
+  
+  // UI states
   const [mapType, setMapType] = useState<'modern' | 'real-time'>('modern');
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const [isRewardDetailsModalOpen, setIsRewardDetailsModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isNFTMinterOpen, setIsNFTMinterOpen] = useState(false);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
-  const [mintedNFTs, setMintedNFTs] = useState<MintedNFT[]>([]);
-  const [moveStats, setMoveStats] = useState<MoveStats>({
-    distance: 0,
-    duration: 0,
-    pace: 0
-  });
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [rewardBreakdown, setRewardBreakdown] = useState({
+  const [rewardBreakdown, setRewardBreakdown] = useState<any>({
     baseReward: 0,
     timeBonus: 0,
     streakBonus: 0,
@@ -60,382 +54,340 @@ export default function MapView() {
     userStreak: 1,
     isTimeBonusActive: false
   });
-
-  // Query for staking info
-  const { data: stakingInfo, refetch: refetchStakingInfo } = useQuery({
-    queryKey: ['stakingInfo', address],
-    queryFn: async () => {
-      if (!address || !signer?.provider) return null;
-      return getStakingInfo(address, signer.provider);
-    },
-    enabled: !!address && !!signer?.provider,
+  
+  // Staking info
+  const [stakingInfo, setStakingInfo] = useState<any>(null);
+  
+  // Movement stats
+  const [moveStats, setMoveStats] = useState<MoveStats>({
+    distance: 0,
+    duration: 0,
+    pace: 0
   });
-
-  // Status bar info
-  const isOfflineModeReady = true; // This would come from the OfflineMap component in a real implementation
-
-  // Update stats while tracking is active
-  useEffect(() => {
-    if (!isTracking) return;
-
-    if (!startTime) {
-      setStartTime(Date.now());
-    }
-
-    const interval = setInterval(() => {
-      if (startTime) {
-        const duration = (Date.now() - startTime) / 1000; // in seconds
-        const pace = totalDistance > 0 ? duration / 60 / totalDistance : 0; // min/km
-
-        setMoveStats({
-          distance: totalDistance,
-          duration,
-          pace
-        });
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isTracking, startTime, totalDistance]);
-
-  // Handle tracking toggle
-  const handleTrackingToggle = async () => {
-    if (isTracking) {
-      stopTracking();
-      setStartTime(null);
+  
+  // Session timers
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
+  
+  // Fetch staking info
+  const { data: stakingData, refetch: refetchStakingInfo } = useQuery({
+    queryKey: ['staking-info', address],
+    queryFn: async () => {
+      if (!address || !provider) return null;
       
-      // Reward the user for their distance if connected to wallet
-      if (isConnected && address && signer && totalDistance > 0) {
-        // Calculate base reward from distance
-        const baseReward = calculateReward(totalDistance);
-        
-        // Check if current time qualifies for time bonus
+      try {
+        const info = await getStakingInfo(address, provider);
+        if (info.success) {
+          return {
+            stakedAmount: info.staked || '0',
+            totalStaked: '125000', // Example global staking
+            rewardRate: '12.5',
+            pendingRewards: info.pendingRewards || '0',
+            lastStakedAt: info.lastStakedAt ? info.lastStakedAt.getTime() : 0
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Error fetching staking info:', error);
+        return null;
+      }
+    },
+    enabled: !!address && !!provider
+  });
+  
+  // Update stakingInfo state when data changes
+  useEffect(() => {
+    if (stakingData) {
+      setStakingInfo(stakingData);
+    }
+  }, [stakingData]);
+  
+  // Update the timer
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    
+    if (isTracking && sessionStartTime) {
+      interval = setInterval(() => {
         const now = new Date();
-        const hour = now.getHours();
-        const isTimeBonusActive = (hour >= 5 && hour <= 7) || (hour >= 18 && hour <= 20);
+        const elapsed = Math.floor((now.getTime() - sessionStartTime.getTime()) / 1000);
+        setElapsedTime(elapsed);
         
-        // Apply time-of-day bonus
-        const timeBonus = calculateTimeBonus(baseReward, now);
+        // Update stats
+        if (locations.length > 0) {
+          const pace = elapsed > 0 ? (totalDistance / (elapsed / 60)) : 0;
+          setMoveStats({
+            distance: totalDistance,
+            duration: elapsed,
+            pace: pace
+          });
+        }
+      }, 1000);
+    }
+    
+    return () => clearInterval(interval);
+  }, [isTracking, sessionStartTime, locations, totalDistance]);
+  
+  // Handle tracking start/stop
+  const handleStartTracking = async () => {
+    try {
+      setSessionStartTime(new Date());
+      setElapsedTime(0);
+      await startTracking();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not start location tracking",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleStopTracking = async () => {
+    try {
+      stopTracking();
+      
+      // Only reward if we actually moved
+      if (totalDistance > 0.01 && isConnected && address && signer) {
+        // Calculate reward
+        const baseReward = calculateReward(totalDistance);
+        const streakBonus = calculateStreakBonus(5); // Placeholder streak days
+        // Get the current hour to determine if time bonus is active
+        const currentHour = new Date().getHours();
+        const isTimeBonusActive = (currentHour >= 5 && currentHour <= 7) || (currentHour >= 18 && currentHour <= 20);
         
-        // Get user's streak (in a real app, this would come from the database)
-        // For demo, we'll assume a streak of 1 day (no streak bonus yet)
-        const userStreak = 1;
-        const finalReward = calculateStreakBonus(timeBonus, userStreak);
+        // Calculate intermediate reward values
+        const timeReward = baseReward * (1 + (isTimeBonusActive ? 0.15 : 0));
+        const finalReward = timeReward * (1 + streakBonus);
         
-        // Update reward breakdown for modal
+        // Set reward breakdown for modal
         setRewardBreakdown({
           baseReward,
-          timeBonus,
+          timeBonus: timeReward,
           streakBonus: finalReward,
-          finalReward,
-          userStreak,
+          finalReward: finalReward,
+          userStreak: 5, // Placeholder streak days
           isTimeBonusActive
         });
         
-        try {
-          // Call blockchain to mint tokens
-          const result = await rewardUserForDistance(address, finalReward, signer);
-          
-          if (result.success) {
-            toast({
-              title: "Tokens Earned!",
-              description: (
-                <div className="flex flex-col">
-                  <span>You earned {finalReward.toFixed(2)} MOVE tokens!</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="text-xs pl-0 mt-1"
-                    onClick={() => setIsRewardDetailsModalOpen(true)}
-                  >
-                    View reward details
-                  </Button>
-                </div>
-              ),
-            });
-            
-            // Show the reward details modal
-            setIsRewardDetailsModalOpen(true);
-            
-            // Refetch staking info after minting
-            refetchStakingInfo();
-          } else {
-            toast({
-              title: "Failed to Mint Tokens",
-              description: result.error || "Unknown error occurred",
-              variant: "destructive",
-            });
-          }
-        } catch (error) {
+        // Show reward modal
+        setIsRewardDetailsModalOpen(true);
+        
+        // Send reward to blockchain
+        const result = await rewardUserForDistance(address, totalDistance, signer);
+        
+        if (result.success) {
           toast({
-            title: "Reward Error",
-            description: "There was an error processing your rewards.",
-            variant: "destructive",
+            title: "Reward Received!",
+            description: `${finalReward.toFixed(2)} MOVE tokens earned`,
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: `Could not send reward: ${result.error}`,
+            variant: "destructive"
           });
         }
       }
-    } else {
-      startTracking();
-    }
-  };
-
-  // Handle wallet connection
-  const handleConnectWallet = async () => {
-    try {
-      await connect();
     } catch (error) {
       toast({
-        title: "Connection Failed",
-        description: "Failed to connect to your wallet.",
-        variant: "destructive",
+        title: "Error",
+        description: "Could not process movement rewards",
+        variant: "destructive"
       });
     }
   };
   
-  // Handle NFT minting
-  const handleMintNFT = () => {
-    if (!isConnected) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet to mint NFTs.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Format session duration for display
+  const formatDuration = (seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
     
-    if (!location) {
-      toast({
-        title: "Location Required",
-        description: "Enable location tracking to mint your current location.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsNFTMinterOpen(true);
+    return `${hrs > 0 ? `${hrs}:` : ''}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Handle NFT collection view
-  const handleViewCollection = () => {
-    if (!isConnected) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet to view your NFT collection.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Format pace for display
+  const formatPace = (pace: number): string => {
+    if (pace === 0) return "--:--";
     
-    setIsNFTCollectionOpen(true);
+    // Convert pace from km/min to min/km
+    const minPerKm = pace > 0 ? 1 / pace : 0;
+    const mins = Math.floor(minPerKm);
+    const secs = Math.floor((minPerKm - mins) * 60);
+    
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
   
-  // Handle successful NFT mint
   const handleNFTMinted = (nft: MintedNFT) => {
-    setMintedNFTs(prev => [...prev, nft]);
     toast({
-      title: "Location NFT Minted!",
-      description: `"${nft.metadata.name}" has been added to your collection.`,
+      title: "NFT Minted",
+      description: `Your location NFT was minted successfully`,
+      variant: "default"
     });
   };
-
+  
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
-      {/* Mock UI based on the screenshot - no actual map for now */}
-      <div className="relative h-screen">
-        {/* STATUS BAR */}
-        <div className="p-4 flex justify-between items-center border-b border-gray-800">
-          <div className="flex items-center">
-            <span className="text-sm text-gray-400">GPS Inactive</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">Offline Maps Ready</span>
-            <div className="bg-teal-500 px-3 py-1 rounded-full text-xs">
-              Connected
+    <div className="flex flex-col h-screen bg-slate-900">
+      {/* Fullscreen map container positioned at the bottom layer */}
+      <div className="absolute inset-0 w-full h-full z-0">
+        {mapType === 'modern' ? (
+          <ModernMap 
+            location={location}
+            onZoomIn={() => {}}
+            onZoomOut={() => {}}
+            onToggleMapType={() => setMapType('real-time')}
+            onGoToCurrentLocation={() => {}}
+          />
+        ) : (
+          <RealTimeLocationMap 
+            location={location}
+            onToggleMapType={() => setMapType('modern')}
+          />
+        )}
+      </div>
+      
+      {/* Discovery layer over the map */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <DiscoveryLayer />
+      </div>
+      
+      {/* Top navigation bar */}
+      <div className="relative z-20 w-full">
+        <div className="flex justify-center py-2">
+          <div className="bg-slate-800/90 backdrop-blur-sm rounded-full p-1">
+            <div className="flex">
+              <Button 
+                variant={mapType === 'modern' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${mapType === 'modern' ? 'bg-emerald-500 hover:bg-emerald-600' : 'text-slate-400'}`}
+                onClick={() => setMapType('modern')}
+              >
+                Modern
+              </Button>
+              <Button 
+                variant={mapType === 'real-time' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${mapType === 'real-time' ? 'bg-blue-800 hover:bg-blue-700' : 'text-slate-400'}`}
+                onClick={() => setMapType('real-time')}
+              >
+                Real-Time
+              </Button>
             </div>
           </div>
         </div>
         
-        {/* Mode Selector */}
-        <div className="flex justify-center py-3">
-          <div className="bg-gray-900 rounded-full p-1 inline-flex">
-            <Button
-              variant="default"
-              size="sm"
-              className="rounded-full bg-teal-500 hover:bg-teal-600 text-white px-5"
-            >
-              Modern
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full text-gray-400 px-5"
-            >
-              Real-Time
-            </Button>
-          </div>
+        {/* Movement intensity indicator */}
+        <div className="px-4 py-2">
+          <MovementIntensityIndicator />
+        </div>
+      </div>
+      
+      {/* Left floating stats panel */}
+      <div className="absolute left-4 top-28 z-20 flex flex-col gap-2 max-w-[180px]">
+        <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg">
+          <h4 className="text-xs text-slate-400">Distance</h4>
+          <p className="text-xl font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-sm text-slate-400">km</span></p>
         </div>
         
-        {/* Movement Intensity */}
-        <div className="px-4 mt-4">
-          <div className="flex justify-between mb-1">
-            <span className="text-white text-sm">Movement Intensity</span>
-            <span className="text-gray-400 text-sm">0.0 km/h</span>
-          </div>
-          
-          <div className="h-1.5 w-full bg-gray-800 rounded-full relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full flex justify-between px-4 text-xs text-gray-500">
-                <span>Low</span>
-                <span>Moderate</span>
-                <span>High</span>
-                <span>Extreme</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="text-center text-xs text-gray-400 mt-1">
-            Current Intensity: Resting
-          </div>
+        <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg">
+          <h4 className="text-xs text-slate-400">Duration</h4>
+          <p className="text-xl font-bold text-white">{formatDuration(moveStats.duration)}</p>
         </div>
         
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 px-4 mt-10">
-          <div>
-            <div className="text-gray-400 text-sm">Distance</div>
-            <div className="text-white text-xl font-bold">0.00 <span className="text-sm font-normal">km</span></div>
-          </div>
-          
-          <div>
-            <div className="text-gray-400 text-sm">Duration</div>
-            <div className="text-white text-xl font-bold">0:00</div>
-          </div>
-          
-          <div>
-            <div className="text-gray-400 text-sm">Pace</div>
-            <div className="text-white text-xl font-bold">--:--</div>
-          </div>
+        <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg">
+          <h4 className="text-xs text-slate-400">Pace</h4>
+          <p className="text-xl font-bold text-white">{formatPace(moveStats.pace)}</p>
         </div>
         
-        {/* Controls - Right side */}
-        <div className="absolute right-4 top-32 flex flex-col gap-4">
-          <Button
-            variant="secondary"
-            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg"
-            onClick={handleMintNFT}
-          >
-            <Camera className="h-5 w-5 text-blue-400" />
-          </Button>
-          
-          <Button
-            variant="secondary" 
-            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg"
-            onClick={handleViewCollection}
-          >
-            <Award className="h-5 w-5 text-amber-400" />
-          </Button>
-          
-          <Button
-            variant="secondary"
-            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg" 
-            onClick={() => setIsNFTCollectionOpen(true)}
-          >
-            <Headphones className="h-5 w-5 text-teal-400" />
-          </Button>
-        </div>
-        
-        {/* MOVE Token Section */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 px-4 py-5">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
-              <Coin className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-white font-medium">MOVE Token</span>
-            <span className="ml-auto text-gray-400 text-xs">ERC-20</span>
-          </div>
-          
-          <div className="flex justify-between items-center mb-2">
-            <div className="text-gray-400 text-sm">Available Balance</div>
-            <div>
-              <span className="text-lg font-bold">0.00</span>
-              <span className="text-sm text-gray-400 ml-1">MOVE</span>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center mb-2">
-            <div className="text-gray-400 text-sm">Staked Tokens</div>
-            <div>
-              <span className="text-lg font-bold">0.00</span>
-              <span className="text-sm text-gray-400 ml-1">MOVE</span>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center mb-1">
-            <div className="text-gray-400 text-sm">APR: 12%</div>
-            <div className="text-gray-400 text-sm">
-              Pending: <span className="text-teal-400">0.00 MOVE</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between text-gray-400 text-xs mb-4">
-            <div>1 km = 1 MOVE</div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="border-teal-500 text-teal-500 hover:bg-teal-500/10"
-              onClick={() => setIsStakeModalOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Stake
-            </Button>
-            
-            <Button
-              variant="default"
-              className="bg-teal-500 hover:bg-teal-600"
-            >
-              <Gift className="h-4 w-4 mr-2" />
-              Claim
-            </Button>
-          </div>
-        </div>
-        
-        {/* Action Buttons */}
-        <div className="absolute bottom-64 right-4">
-          <Button
-            variant="default"
-            className={`w-14 h-14 rounded-full shadow-xl ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
-            onClick={handleTrackingToggle}
-          >
+        <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg text-sm">
+          <Badge variant="outline" className="mb-1">
             {isTracking ? (
-              <Square className="h-6 w-6 text-white" />
+              <span className="flex items-center gap-1 text-emerald-500"><span className="animate-pulse rounded-full h-2 w-2 bg-emerald-500"></span> Tracking Active</span>
             ) : (
-              <Play className="h-6 w-6 text-white" />
+              <span className="flex items-center gap-1 text-slate-400"><Square size={10} /> Tracking Paused</span>
             )}
+          </Badge>
+          <p className="text-xs text-slate-400 mt-2">Current coordinates:</p>
+          <p className="text-xs text-slate-300">{location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : 'No location data'}</p>
+        </div>
+      </div>
+      
+      {/* Right floating action buttons */}
+      <div className="absolute right-4 top-28 z-20 flex flex-col gap-3">
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsNFTMinterOpen(true)}>
+          <Camera size={20} />
+        </Button>
+        
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsNFTCollectionOpen(true)}>
+          <Award size={20} />
+        </Button>
+        
+        <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsVoiceModalOpen(true)}>
+          <Headphones size={20} />
+        </Button>
+      </div>
+      
+      {/* Voice command floating button */}
+      <div className="absolute left-4 bottom-44 z-20">
+        <VoiceCommandButton position="relative" variant="secondary" />
+      </div>
+      
+      {/* Stake button */}
+      <div className="absolute right-4 bottom-32 z-20">
+        <Button 
+          size="sm" 
+          variant="outline"
+          className="rounded-full bg-black/70 hover:bg-black/90 text-white border-slate-700"
+          onClick={() => setIsStakeModalOpen(true)}
+        >
+          <Coin size={16} className="mr-2" />
+          Stake MOVE
+        </Button>
+      </div>
+      
+      {/* Tracking controls at bottom */}
+      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+        {isTracking ? (
+          <Button 
+            size="lg" 
+            variant="destructive"
+            className="rounded-full h-16 w-16 shadow-lg"
+            onClick={handleStopTracking}
+          >
+            <Square size={24} />
           </Button>
-        </div>
-        
-        <div className="absolute bottom-64 left-4">
-          <VoiceCommandButton position="relative" variant="secondary" />
-        </div>
-        
-        {/* Map components */}
-        <div className="w-full h-[400px] rounded-xl overflow-hidden">
-          {mapType === 'modern' ? (
-            <ModernMap 
-              location={location}
-              onZoomIn={() => {}}
-              onZoomOut={() => {}}
-              onToggleMapType={() => setMapType('real-time')}
-              onGoToCurrentLocation={() => {}}
-            />
-          ) : (
-            <RealTimeLocationMap 
-              location={location}
-              onToggleMapType={() => setMapType('modern')}
-            />
-          )}
-          <DiscoveryLayer />
+        ) : (
+          <Button 
+            size="lg" 
+            variant="default"
+            className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 shadow-lg"
+            onClick={handleStartTracking}
+          >
+            <Play size={24} />
+          </Button>
+        )}
+      </div>
+      
+      {/* Bottom navigation bar */}
+      <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-900/90 backdrop-blur-sm z-20 border-t border-slate-800">
+        <div className="flex items-center justify-around h-full">
+          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
+            <MapIcon size={20} className="text-red-500" />
+            <span className="text-xs mt-1">Map</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
+            <Coin size={20} className="text-slate-400" />
+            <span className="text-xs mt-1">Wallet</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
+            <Gift size={20} className="text-slate-400" />
+            <span className="text-xs mt-1">Rewards</span>
+          </Button>
+          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
+            <Award size={20} className="text-slate-400" />
+            <span className="text-xs mt-1">Settings</span>
+          </Button>
         </div>
       </div>
       
@@ -458,14 +410,12 @@ export default function MapView() {
         rewardBreakdown={rewardBreakdown}
       />
       
-      {/* NFT Minter Modal */}
       <LocationNFTMinter 
         isOpen={isNFTMinterOpen}
         onClose={() => setIsNFTMinterOpen(false)}
         onSuccess={handleNFTMinted}
       />
       
-      {/* NFT Collection Modal */}
       <LocationNFTCollection
         isOpen={isNFTCollectionOpen}
         onClose={() => setIsNFTCollectionOpen(false)}
