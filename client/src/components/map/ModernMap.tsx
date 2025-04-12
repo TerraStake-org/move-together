@@ -318,7 +318,14 @@ export default function ModernMap({
       <div 
         ref={containerRef}
         className="w-full h-[400px] rounded-lg overflow-hidden relative"
-        style={getMapPattern()}
+        style={{
+          ...getMapPattern(),
+          background: mapType === 'neon' 
+            ? 'linear-gradient(135deg, #000428 0%, #004e92 100%)' 
+            : mapType === 'retro' 
+              ? 'linear-gradient(135deg, #e6b980 0%, #eacda3 100%)'
+              : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+        }}
       >
         {/* Canvas for drawing the path */}
         <canvas 

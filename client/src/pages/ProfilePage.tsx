@@ -13,6 +13,7 @@ import { formatAddress } from '@/lib/utils';
 import { User } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 import BadgeCollection from '@/components/discovery/BadgeCollection';
+import { Award } from 'lucide-react';
 
 export default function ProfilePage() {
   const { toast } = useToast();

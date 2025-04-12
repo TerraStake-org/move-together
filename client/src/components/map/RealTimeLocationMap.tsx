@@ -81,11 +81,23 @@ export default function RealTimeLocationMap({ location, onToggleMapType }: RealT
     // Check if Google Maps API is loaded
     if (!window.google?.maps) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBuiGOTQfXWgCKBfwXWeSiSJYQPkVEBUYo&libraries=places`;
+      // For development, we'll use a fallback approach without a key
+      script.src = `https://maps.googleapis.com/maps/api/js?libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = initializeMap;
       document.head.appendChild(script);
+      
+      // Handle script error (API key issues, network problems, etc.)
+      script.onerror = () => {
+        console.error("Failed to load Google Maps API");
+        setMapLoaded(true); // Mark as loaded to prevent continuous retry
+        toast({
+          title: "Map Error",
+          description: "Failed to load map service. Using fallback view.",
+          variant: "destructive"
+        });
+      };
     } else {
       initializeMap();
     }
