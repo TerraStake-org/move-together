@@ -1,12 +1,11 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useRealTimeLocation } from '@/hooks/useRealTimeLocation';
-import { calculateHaversineDistance, isLocationChangeReasonable } from '@/lib/utils';
+import { createContext, useContext, ReactNode } from 'react';
+import useRealTimeLocation from '@/hooks/useRealTimeLocation';
 import { useToast } from '@/hooks/use-toast';
 
 interface LocationData {
   latitude: number;
   longitude: number;
-  timestamp: number;
+  timestamp?: number;
 }
 
 interface LocationContextType {
@@ -34,89 +33,35 @@ interface LocationProviderProps {
 }
 
 export const LocationProvider = ({ children }: LocationProviderProps) => {
-  const { location: currentLocation, error: locationError } = useRealTimeLocation();
-  const [isTracking, setIsTracking] = useState<boolean>(false);
-  const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
-  const [totalDistance, setTotalDistance] = useState<number>(0);
-  const [lastAntiCheatCheck, setLastAntiCheatCheck] = useState<number>(Date.now());
+  // Use our enhanced hook that handles location tracking, anti-cheat, and distance calculation
+  const { 
+    location, 
+    error, 
+    isTracking, 
+    totalDistance, 
+    startTracking: internalStartTracking, 
+    stopTracking: internalStopTracking 
+  } = useRealTimeLocation();
   
   const { toast } = useToast();
 
-  // Convert the location from hook to our format with timestamp
-  const location = currentLocation ? {
-    latitude: currentLocation.latitude,
-    longitude: currentLocation.longitude,
-    timestamp: Date.now(),
-  } : null;
-
-  // Update location history and calculate distance when tracking is active
-  useEffect(() => {
-    if (!isTracking || !location) return;
-
-    // Anti-cheat: Check if location change is reasonable
-    if (locationHistory.length > 0) {
-      const prevLocation = locationHistory[locationHistory.length - 1];
-      const timeElapsed = location.timestamp - prevLocation.timestamp;
-      
-      const isReasonable = isLocationChangeReasonable(
-        prevLocation.latitude,
-        prevLocation.longitude,
-        location.latitude,
-        location.longitude,
-        timeElapsed
-      );
-
-      if (!isReasonable) {
-        // Potential GPS spoofing detected
-        if (Date.now() - lastAntiCheatCheck > 10000) { // Only show warning every 10 seconds
-          toast({
-            title: "Suspicious Movement Detected",
-            description: "Unrealistic movement pattern detected. This may affect your rewards.",
-            variant: "destructive",
-          });
-          setLastAntiCheatCheck(Date.now());
-        }
-        return; // Don't update location history or distance
-      }
-      
-      // Calculate distance since last location
-      const distanceInMeters = calculateHaversineDistance(
-        prevLocation.latitude,
-        prevLocation.longitude,
-        location.latitude,
-        location.longitude
-      );
-      
-      // Only update if moved at least 5 meters (to avoid micro-movements)
-      if (distanceInMeters >= 5) {
-        setTotalDistance(prev => prev + (distanceInMeters / 1000)); // Convert to km
-        setLocationHistory(prev => [...prev, location]);
-      }
-    } else {
-      // First location entry
-      setLocationHistory([location]);
-    }
-  }, [isTracking, location, locationHistory, lastAntiCheatCheck, toast]);
-
-  const startTracking = useCallback(() => {
-    setIsTracking(true);
-    setLocationHistory([]);
-    setTotalDistance(0);
-    
+  // Wrapper for start tracking that adds UI notifications
+  const startTracking = () => {
+    internalStartTracking();
     toast({
       title: "Tracking Started",
       description: "Your movement is now being tracked.",
     });
-  }, [toast]);
+  };
 
-  const stopTracking = useCallback(() => {
-    setIsTracking(false);
-    
+  // Wrapper for stop tracking that adds UI notifications
+  const stopTracking = () => {
+    internalStopTracking();
     toast({
       title: "Tracking Stopped",
       description: `You traveled ${totalDistance.toFixed(2)} km.`,
     });
-  }, [totalDistance, toast]);
+  };
 
   return (
     <LocationContext.Provider
@@ -126,7 +71,7 @@ export const LocationProvider = ({ children }: LocationProviderProps) => {
         totalDistance,
         startTracking,
         stopTracking,
-        error: locationError,
+        error,
       }}
     >
       {children}

@@ -1,0 +1,103 @@
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import useRealTimeLocation from '../hooks/useRealTimeLocation'; // Path adjusted to use a separate hook file
+
+const RealTimeLocationMap = () => {
+  const { location, error } = useRealTimeLocation();
+
+  // Handle errors in a user-friendly way
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Location Error', error, [{ text: 'OK' }]);
+    }
+  }, [error]);
+
+  // Loading state with better UX
+  if (!location) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading your location...</Text>
+      </View>
+    );
+  }
+
+  // Memoize the map region to avoid unnecessary re-renders
+  const mapRegion = useMemo(
+    () => ({
+      ...location,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }),
+    [location]
+  );
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={mapRegion}
+        showsUserLocation={true}
+        followsUserLocation={true} // Ensures the map follows the user's location
+        showsCompass={true} // Show compass to help users orient themselves
+        showsTraffic={true} // Display traffic information if available
+        loadingEnabled={true} // Show a loading indicator until the map is fully loaded
+        toolbarEnabled={false} // Hide the default toolbar for a cleaner UI
+        customMapStyle={mapStyle} // Use a custom map style for a unique appearance
+      >
+        {/* Marker at the user's current location */}
+        <Marker
+          coordinate={location}
+          title="Your Location"
+          description="You are here"
+          pinColor="#FF6347" // Use a distinctive color for the user's location marker
+          tracksViewChanges={false} // Optimize performance by stopping unnecessary re-renders of the marker
+        />
+      </MapView>
+    </View>
+  );
+};
+
+// Default map style can be customized further in `mapStyle`
+const mapStyle = [
+  // Example custom styles
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#ff6347' }],
+  },
+  {
+    featureType: 'landscape',
+    elementType: 'geometry',
+    stylers: [{ color: '#f0f0f0' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#c9c9c9' }],
+  },
+];
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  map: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+});
+
+export default RealTimeLocationMap;
