@@ -390,6 +390,19 @@ export default function MapView() {
         onClose={() => setIsRewardDetailsModalOpen(false)}
         rewardBreakdown={rewardBreakdown}
       />
+      
+      {/* NFT Minter Modal */}
+      <LocationNFTMinter 
+        isOpen={isNFTMinterOpen}
+        onClose={() => setIsNFTMinterOpen(false)}
+        onSuccess={handleNFTMinted}
+      />
+      
+      {/* NFT Collection Modal */}
+      <LocationNFTCollection
+        isOpen={isNFTCollectionOpen}
+        onClose={() => setIsNFTCollectionOpen(false)}
+      />
     </div>
   );
 }
