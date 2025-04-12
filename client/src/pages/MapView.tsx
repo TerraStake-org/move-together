@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext';
 import { useWeb3 } from '@/context/Web3Context';
-import OfflineMap from '@/components/map/OfflineMap';
+import MapBoxMap from '@/components/map/MapBoxMap';
 import ActivityStats from '@/components/ActivityStats';
 import TokenOverview from '@/components/TokenOverview';
 import Achievements from '@/components/Achievements';
@@ -210,7 +210,7 @@ export default function MapView() {
       
       {/* MAP VIEW */}
       <div className="relative">
-        <OfflineMap 
+        <MapBoxMap 
           location={location}
           onZoomIn={() => {}}
           onZoomOut={() => {}}
