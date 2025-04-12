@@ -39,9 +39,13 @@ export default function StakeModal({
   const { signer } = useWeb3();
   const { toast } = useToast();
   
+  // Use stakingInfo if available, otherwise fall back to props
+  const stakedAmount = stakingInfo?.stakedAmount || currentlyStaked || '0';
+  const availableTokenBalance = availableBalance || '0';
+  
   const maxAmount = mode === 'stake' 
-    ? parseFloat(availableBalance) 
-    : parseFloat(currentlyStaked);
+    ? parseFloat(availableTokenBalance) 
+    : parseFloat(stakedAmount);
   
   const handleSliderChange = (value: number[]) => {
     // Value is a percentage of maxAmount
@@ -90,7 +94,14 @@ export default function StakeModal({
           title: `${mode === 'stake' ? 'Staked' : 'Unstaked'} Successfully`,
           description: `You have successfully ${mode === 'stake' ? 'staked' : 'unstaked'} ${amount} MOVE tokens.`,
         });
-        onSuccess();
+        
+        // Call either onSuccess or onStakingComplete callback
+        if (onSuccess) {
+          onSuccess();
+        } else if (onStakingComplete) {
+          await onStakingComplete();
+        }
+        
         onClose();
       } else {
         toast({
@@ -136,7 +147,7 @@ export default function StakeModal({
               {mode === 'stake' ? 'Available Balance' : 'Currently Staked'}:
             </span>
             <span className="font-medium">
-              {mode === 'stake' ? availableBalance : currentlyStaked} MOVE
+              {mode === 'stake' ? availableTokenBalance : stakedAmount} MOVE
             </span>
           </div>
           

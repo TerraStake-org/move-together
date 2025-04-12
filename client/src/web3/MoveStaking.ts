@@ -106,15 +106,19 @@ export const calculateAPR = async (provider: ethers.Provider) => {
       return 0;
     }
     
+    // Convert BigInt values to numbers for calculation
+    const rewardRateNum = Number(ethers.formatUnits(rewardRatePerSecond, 18));
+    const totalStakedNum = Number(ethers.formatUnits(totalStaked, 18));
+    
     // Reward per second for each staked token
-    const rewardPerStakedToken = rewardRatePerSecond / totalStaked;
+    const rewardPerStakedToken = rewardRateNum / totalStakedNum;
     
     // Convert to annual rate
     const secondsInYear = 365 * 24 * 60 * 60;
     const annualRate = rewardPerStakedToken * secondsInYear;
     
     // Convert to percentage
-    return Number(annualRate) * 100;
+    return annualRate * 100;
   } catch (error) {
     console.error('Failed to calculate APR:', error);
     return 0;
