@@ -287,14 +287,14 @@ export default function MapView() {
         </div>
       </div>
       
-      {/* Map Type Selector - below fixed navbar */}
-      <div className="fixed top-14 left-0 right-0 z-40 py-3 bg-gradient-to-b from-slate-900/70 to-transparent">
+      {/* Map Type Selector - below fixed navbar with improved styling */}
+      <div className="fixed top-16 left-0 right-0 z-40 py-3 bg-gradient-to-b from-slate-900/70 to-transparent">
         <div className="flex justify-center">
           <div className="inline-flex bg-black/50 backdrop-blur-sm rounded-full p-1 shadow-lg border border-slate-800/50">
             <Button 
               variant={mapType === 'modern' ? "default" : "outline"} 
               size="sm" 
-              className={`rounded-full ${mapType === 'modern' ? 'bg-slate-700 hover:bg-slate-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              className={`rounded-full px-4 ${mapType === 'modern' ? 'bg-slate-700 hover:bg-slate-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
               onClick={() => setMapType('modern')}
             >
               Modern
@@ -302,7 +302,7 @@ export default function MapView() {
             <Button 
               variant={mapType === 'real-time' ? "default" : "outline"} 
               size="sm" 
-              className={`rounded-full ${mapType === 'real-time' ? 'bg-blue-800 hover:bg-blue-700' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              className={`rounded-full px-4 ${mapType === 'real-time' ? 'bg-blue-800 hover:bg-blue-700' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
               onClick={() => setMapType('real-time')}
             >
               Real-Time
@@ -310,7 +310,7 @@ export default function MapView() {
             <Button 
               variant={mapType === 'offline' ? "default" : "outline"} 
               size="sm" 
-              className={`rounded-full ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
+              className={`rounded-full px-4 ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-600' : 'text-slate-300 bg-transparent hover:bg-black/30'}`}
               onClick={() => {
                 console.log("Switching to offline mode");
                 setMapType('offline');
@@ -322,13 +322,13 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Dashboard content - Movement intensity indicator */}
-      <div className="fixed top-28 left-0 right-0 z-30 px-4">
+      {/* Dashboard content - Movement intensity indicator - Moved down for more space */}
+      <div className="fixed top-36 left-0 right-0 z-30 px-4">
         <MovementIntensityIndicator />
       </div>
       
-      {/* Stats Dashboard - well spaced and organized with gap */}
-      <div className="fixed top-[265px] left-0 right-0 z-30 px-4">
+      {/* Stats Dashboard - well spaced and organized with gap - Adjusted spacing */}
+      <div className="fixed top-[280px] left-0 right-0 z-30 px-4">
         <div className="grid grid-cols-2 gap-3">
           {/* Left column */}
           <div className="space-y-3">
@@ -429,24 +429,32 @@ export default function MapView() {
         )}
       </div>
       
-      {/* Bottom navigation bar */}
+      {/* Bottom navigation bar - Redesigned with better spacing and no overlap */}
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-slate-900/90 backdrop-blur-sm z-40 border-t border-slate-800 shadow-lg">
-        <div className="flex items-center justify-around h-full">
-          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
-            <MapIcon size={20} className="text-red-500" />
-            <span className="text-xs mt-1">Map</span>
+        <div className="grid grid-cols-4 h-full">
+          <Button variant="ghost" className="flex flex-col items-center justify-center h-full rounded-none">
+            <div className="flex flex-col items-center">
+              <MapIcon size={20} className="text-red-500 mb-1" />
+              <span className="text-xs">Map</span>
+            </div>
           </Button>
-          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
-            <Coin size={20} className="text-slate-400" />
-            <span className="text-xs mt-1">Wallet</span>
+          <Button variant="ghost" className="flex flex-col items-center justify-center h-full rounded-none">
+            <div className="flex flex-col items-center">
+              <Coin size={20} className="text-slate-400 mb-1" />
+              <span className="text-xs">Wallet</span>
+            </div>
           </Button>
-          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
-            <Gift size={20} className="text-slate-400" />
-            <span className="text-xs mt-1">Rewards</span>
+          <Button variant="ghost" className="flex flex-col items-center justify-center h-full rounded-none">
+            <div className="flex flex-col items-center">
+              <Gift size={20} className="text-slate-400 mb-1" />
+              <span className="text-xs">Rewards</span>
+            </div>
           </Button>
-          <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
-            <AwardIcon size={20} className="text-slate-400" />
-            <span className="text-xs mt-1">Settings</span>
+          <Button variant="ghost" className="flex flex-col items-center justify-center h-full rounded-none">
+            <div className="flex flex-col items-center">
+              <AwardIcon size={20} className="text-slate-400 mb-1" />
+              <span className="text-xs">Settings</span>
+            </div>
           </Button>
         </div>
       </div>
