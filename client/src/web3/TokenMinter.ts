@@ -37,10 +37,9 @@ export const getTokenBalance = async (address: string, provider: ethers.Provider
   }
 };
 
-export const rewardUserForDistance = async (userAddress: string, distanceKm: number, signer: ethers.JsonRpcSigner) => {
-  // Simple ratio: 1 MOVE token per 1 km
-  const tokensToMint = distanceKm;
-  return mintMoveTokens(userAddress, tokensToMint, signer);
+export const rewardUserForDistance = async (userAddress: string, tokenAmount: number, signer: ethers.JsonRpcSigner) => {
+  // Use the pre-calculated token amount that already includes bonuses
+  return mintMoveTokens(userAddress, tokenAmount, signer);
 };
 
 export const getContractAddress = () => MOVE_TOKEN_ADDRESS;

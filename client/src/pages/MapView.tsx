@@ -8,9 +8,10 @@ import Achievements from '@/components/Achievements';
 import NextMilestone from '@/components/NextMilestone';
 import VoiceCommandModal from '@/components/modals/VoiceCommandModal';
 import StakeModal from '@/components/modals/StakeModal';
+import RewardDetailsModal from '@/components/modals/RewardDetailsModal';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { calculateReward } from '@/lib/utils';
+import { calculateReward, calculateStreakBonus, calculateTimeBonus } from '@/lib/utils';
 import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
 import { useQuery } from '@tanstack/react-query';
@@ -28,12 +29,21 @@ export default function MapView() {
 
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
+  const [isRewardDetailsModalOpen, setIsRewardDetailsModalOpen] = useState(false);
   const [moveStats, setMoveStats] = useState<MoveStats>({
     distance: 0,
     duration: 0,
     pace: 0
   });
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [rewardBreakdown, setRewardBreakdown] = useState({
+    baseReward: 0,
+    timeBonus: 0,
+    streakBonus: 0,
+    finalReward: 0,
+    userStreak: 1,
+    isTimeBonusActive: false
+  });
 
   // Query for staking info
   const { data: stakingInfo, refetch: refetchStakingInfo } = useQuery({
@@ -83,40 +93,53 @@ export default function MapView() {
         // Calculate base reward from distance
         const baseReward = calculateReward(totalDistance);
         
+        // Check if current time qualifies for time bonus
+        const now = new Date();
+        const hour = now.getHours();
+        const isTimeBonusActive = (hour >= 5 && hour <= 7) || (hour >= 18 && hour <= 20);
+        
         // Apply time-of-day bonus
-        const timeBonus = calculateTimeBonus(baseReward);
+        const timeBonus = calculateTimeBonus(baseReward, now);
         
         // Get user's streak (in a real app, this would come from the database)
         // For demo, we'll assume a streak of 1 day (no streak bonus yet)
         const userStreak = 1;
         const finalReward = calculateStreakBonus(timeBonus, userStreak);
         
+        // Update reward breakdown for modal
+        setRewardBreakdown({
+          baseReward,
+          timeBonus,
+          streakBonus: finalReward,
+          finalReward,
+          userStreak,
+          isTimeBonusActive
+        });
+        
         try {
           // Call blockchain to mint tokens
           const result = await rewardUserForDistance(address, finalReward, signer);
           
           if (result.success) {
-            // Show detailed reward breakdown
-            let rewardDescription = `Base reward: ${baseReward.toFixed(2)} MOVE tokens\n`;
-            
-            // Add bonus descriptions if applicable
-            if (timeBonus > baseReward) {
-              rewardDescription += `Time bonus: +${(timeBonus - baseReward).toFixed(2)} MOVE tokens\n`;
-            }
-            
-            if (userStreak > 1) {
-              rewardDescription += `Streak bonus: +${(finalReward - timeBonus).toFixed(2)} MOVE tokens\n`;
-            }
-            
-            rewardDescription += `\nTotal: ${finalReward.toFixed(2)} MOVE tokens`;
-            
             toast({
               title: "Tokens Earned!",
-              description: `You earned ${finalReward.toFixed(2)} MOVE tokens for your activity.`,
+              description: (
+                <div className="flex flex-col">
+                  <span>You earned {finalReward.toFixed(2)} MOVE tokens!</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-xs pl-0 mt-1"
+                    onClick={() => setIsRewardDetailsModalOpen(true)}
+                  >
+                    View reward details
+                  </Button>
+                </div>
+              ),
             });
             
-            // Show detailed breakdown in console for now
-            console.log('Reward breakdown:', rewardDescription);
+            // Show the reward details modal
+            setIsRewardDetailsModalOpen(true);
             
             // Refetch staking info after minting
             refetchStakingInfo();
@@ -251,6 +274,12 @@ export default function MapView() {
         onClose={() => setIsStakeModalOpen(false)}
         stakingInfo={stakingInfo}
         onStakingComplete={() => refetchStakingInfo()}
+      />
+      
+      <RewardDetailsModal
+        isOpen={isRewardDetailsModalOpen}
+        onClose={() => setIsRewardDetailsModalOpen(false)}
+        rewardBreakdown={rewardBreakdown}
       />
     </div>
   );
