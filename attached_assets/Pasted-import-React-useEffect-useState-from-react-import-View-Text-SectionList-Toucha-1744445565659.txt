@@ -1,0 +1,184 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  SectionList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
+import Tts from 'react-native-tts';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Sample phrases for different languages
+const SAMPLE_PHRASES = {
+  'en-US': 'Hello, I wish you a wonderful day.',
+  'en-GB': 'Hello, I wish you a wonderful day.',
+  'es-ES': 'Hola, te deseo un día maravilloso.',
+  'fr-FR': 'Bonjour, je vous souhaite une merveilleuse journée.',
+  'de-DE': 'Hallo, ich wünsche dir einen wunderbaren Tag.',
+  'ja-JP': 'こんにちは、素晴らしい一日をお過ごしください。',
+  'ko-KR': '안녕하세요, 멋진 하루 되세요.',
+  'zh-CN': '你好，祝你有美好的一天。',
+  'ar-SA': 'مرحبًا، أتمنى لك يومًا رائعًا.',
+  'ru-RU': 'Здравствуйте, желаю вам прекрасного дня.',
+  'default': 'Hello, I wish you a wonderful day.',
+};
+
+// Font mapping based on language codes
+const FONT_MAP = {
+  'ja-JP': 'NotoSansJP-Regular',
+  'ko-KR': 'NotoSansKR-Regular',
+  'zh-CN': 'NotoSansSC-Regular',
+  'ar-SA': 'NotoNaskhArabic-Regular',
+  'ru-RU': 'NotoSans-Regular',
+  'default': 'System',
+};
+
+const TtsSettingsScreen = () => {
+  const [groupedVoices, setGroupedVoices] = useState([]);
+  const [expandedLanguages, setExpandedLanguages] = useState({});
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadVoices();
+    loadSelectedVoice();
+  }, []);
+
+  const loadSelectedVoice = async () => {
+    const saved = await AsyncStorage.getItem('selectedVoice');
+    if (saved) {
+      setSelectedVoice(saved);
+      Tts.setDefaultVoice(saved);
+    }
+  };
+
+  const loadVoices = async () => {
+    try {
+      const allVoices = await Tts.voices();
+      const filtered = allVoices.filter(
+        (v) => !v.networkConnectionRequired && !v.notInstalled
+      );
+
+      const grouped = filtered.reduce((acc, voice) => {
+        const lang = voice.language || 'Unknown';
+        if (!acc[lang]) acc[lang] = [];
+        acc[lang].push(voice);
+        return acc;
+      }, {});
+
+      const sections = Object.entries(grouped).map(([language, data]) => ({
+        title: language,
+        data,
+      }));
+
+      setGroupedVoices(sections);
+    } catch (err) {
+      console.error('Failed to load voices', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleLanguage = (lang) => {
+    setExpandedLanguages((prev) => ({
+      ...prev,
+      [lang]: !prev[lang],
+    }));
+  };
+
+  const selectVoice = async (voice) => {
+    await AsyncStorage.setItem('selectedVoice', voice.id);
+    setSelectedVoice(voice.id);
+    Tts.setDefaultVoice(voice.id);
+
+    const phrase = SAMPLE_PHRASES[voice.language] || SAMPLE_PHRASES['default'];
+    Tts.setDefaultLanguage(voice.language);
+    Tts.speak(phrase);
+  };
+
+  const getFontFamily = (language) => {
+    return FONT_MAP[language] || FONT_MAP['default'];
+  };
+
+  const renderVoiceItem = ({ item, section }) => {
+    if (!expandedLanguages[section.title]) return null;
+
+    const isSelected = selectedVoice === item.id;
+    return (
+      <TouchableOpacity
+        style={[styles.voiceItem, isSelected && styles.selected]}
+        onPress={() => selectVoice(item)}
+      >
+        <Text style={[styles.voiceText, { fontFamily: getFontFamily(item.language) }]}>
+          {item.name} {isSelected && '✓'}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSectionHeader = ({ section: { title } }) => (
+    <TouchableOpacity onPress={() => toggleLanguage(title)} style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>
+        {title} {expandedLanguages[title] ? '▾' : '▸'}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+        <Text>Loading voices...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>Select Voice</Text>
+      <SectionList
+        sections={groupedVoices}
+        keyExtractor={(item) => item.id}
+        renderItem={renderVoiceItem}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 16, backgroundColor: '#fff' },
+  heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  sectionHeader: {
+    backgroundColor: '#e6f0ff',
+    padding: 10,
+    borderRadius: 6,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0055aa',
+  },
+  voiceItem: {
+    padding: 12,
+    backgroundColor: '#f8f8f8',
+    marginTop: 6,
+    borderRadius: 6,
+  },
+  selected: {
+    backgroundColor: '#c1f0c1',
+    borderColor: '#1b5e20',
+    borderWidth: 2,
+  },
+  voiceText: {
+    fontSize: 15,
+  },
+});
+
+export default TtsSettingsScreen;

@@ -208,9 +208,11 @@ The Web3/blockchain integration should work similarly in React Native, but you'l
 1. Use react-native-dotenv for environment variables
 2. Use a React Native compatible Web3 library like ethers.js (which works in React Native)
 
-## Voice Commands
+## Voice Commands and TTS
 
-For TTS in React Native:
+For TTS in React Native, you have two primary options:
+
+### Option 1: Expo Speech (Simple)
 ```javascript
 import * as Speech from 'expo-speech';
 
@@ -220,6 +222,83 @@ Speech.speak(text, {
   rate: 1.0,
   pitch: 1.0
 });
+
+// Get available voices
+const availableVoices = await Speech.getAvailableVoicesAsync();
+```
+
+### Option 2: react-native-tts (Advanced)
+For more advanced features, including voice selection and control:
+
+```bash
+# Installation
+npm install react-native-tts
+```
+
+Basic usage:
+```javascript
+import Tts from 'react-native-tts';
+
+// Initialize
+Tts.setDefaultRate(0.5);
+Tts.setDefaultPitch(1.2);
+Tts.setDefaultLanguage('en-US');
+
+// Event listeners
+Tts.addEventListener('tts-start', () => console.log('Started speaking'));
+Tts.addEventListener('tts-finish', () => console.log('Finished speaking'));
+Tts.addEventListener('tts-cancel', () => console.log('Speaking canceled'));
+
+// Get available voices
+const voices = await Tts.voices();
+const filteredVoices = voices.filter(v => !v.networkConnectionRequired);
+
+// Speak with selected voice
+Tts.setDefaultVoice('com.apple.ttsbundle.Samantha-compact');
+Tts.speak('Hello world');
+```
+
+### Voice Settings Screen
+A complete implementation of a voice settings screen is available at `client/src/docs/TtsSettingsScreenRN-mock.tsx`. This example showcases:
+
+- Loading and grouping available voices by language
+- Selecting and persisting voice preferences with AsyncStorage
+- Supporting multiple languages with appropriate font handling
+- Speaking sample phrases in the selected language
+- Performance optimization techniques
+
+The implementation is based on the user-provided TTS settings screen code, which demonstrates:
+
+```javascript
+// Component implementation that loads voices by language and provides selection interface
+const TtsSettingsScreen = () => {
+  const [groupedVoices, setGroupedVoices] = useState([]);
+  const [expandedLanguages, setExpandedLanguages] = useState({});
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  
+  // Load available voices
+  const loadVoices = async () => {
+    const allVoices = await Tts.voices();
+    // Group voices by language
+    // Display in an expandable list
+  };
+  
+  // Select voice and speak sample phrases
+  const selectVoice = async (voice) => {
+    await AsyncStorage.setItem('selectedVoice', voice.id);
+    Tts.setDefaultVoice(voice.id);
+    Tts.speak(SAMPLE_PHRASES[voice.language] || SAMPLE_PHRASES['default']);
+  };
+
+  // Render section list of available voices grouped by language
+  return (
+    <SectionList
+      sections={groupedVoices}
+      renderItem={renderVoiceItem}
+      renderSectionHeader={renderSectionHeader}
+    />
+  );
+};
 ```
 
 ## Testing on Device
