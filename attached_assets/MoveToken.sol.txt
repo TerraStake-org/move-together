@@ -1,0 +1,169 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+
+contract MoveToken is
+    Initializable,
+    ERC20BurnableUpgradeable,
+    ERC20CappedUpgradeable,
+    AccessControlEnumerableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable
+{
+    bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+    uint256 public constant MAX_SUPPLY = 2_000_000_000 * 10 ** 18;
+
+    // Staking info
+    struct StakeInfo {
+        uint256 amount;
+        uint256 rewardDebt;
+        uint256 lastStakedAt;
+    }
+
+    mapping(address => StakeInfo) public stakes;
+    uint256 public totalStaked;
+    uint256 public accRewardPerShare;
+    uint256 public lastRewardTime;
+    uint256 public rewardRatePerSecond; // rewards per second for staking
+
+    event Staked(address indexed user, uint256 amount);
+    event Unstaked(address indexed user, uint256 amount);
+    event Claimed(address indexed user, uint256 reward);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address admin) public initializer {
+        __ERC20_init("Move Token", "MOVE");
+        __ERC20Burnable_init();
+        __ERC20Capped_init(MAX_SUPPLY);
+        __AccessControlEnumerable_init();
+        __Pausable_init();
+        __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(GOVERNOR_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(UPGRADER_ROLE, admin);
+
+        rewardRatePerSecond = 1e18; // 1 MOVE per second globally
+        lastRewardTime = block.timestamp;
+    }
+
+    // ================================
+    //         Mint & Burn
+    // ================================
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) whenNotPaused {
+        _mint(to, amount);
+    }
+
+    function _mint(address to, uint256 amount) internal override(ERC20Upgradeable, ERC20CappedUpgradeable) {
+        super._mint(to, amount);
+    }
+
+    // ================================
+    //         Pause Controls
+    // ================================
+    function pause() external onlyRole(GOVERNOR_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(GOVERNOR_ROLE) {
+        _unpause();
+    }
+
+    // ================================
+    //         Staking Logic
+    // ================================
+    function updateRewards() public {
+        if (totalStaked == 0) {
+            lastRewardTime = block.timestamp;
+            return;
+        }
+
+        uint256 elapsed = block.timestamp - lastRewardTime;
+        uint256 reward = elapsed * rewardRatePerSecond;
+
+        accRewardPerShare += reward * 1e12 / totalStaked;
+        lastRewardTime = block.timestamp;
+    }
+
+    function stake(uint256 amount) external nonReentrant whenNotPaused {
+        require(amount > 0, "Amount must be > 0");
+
+        updateRewards();
+
+        StakeInfo storage user = stakes[msg.sender];
+
+        if (user.amount > 0) {
+            uint256 pending = (user.amount * accRewardPerShare) / 1e12 - user.rewardDebt;
+            if (pending > 0) {
+                _mint(msg.sender, pending);
+                emit Claimed(msg.sender, pending);
+            }
+        }
+
+        _burn(msg.sender, amount);
+        user.amount += amount;
+        user.rewardDebt = (user.amount * accRewardPerShare) / 1e12;
+        user.lastStakedAt = block.timestamp;
+        totalStaked += amount;
+
+        emit Staked(msg.sender, amount);
+    }
+
+    function unstake(uint256 amount) external nonReentrant whenNotPaused {
+        StakeInfo storage user = stakes[msg.sender];
+        require(user.amount >= amount, "Insufficient stake");
+
+        updateRewards();
+
+        uint256 pending = (user.amount * accRewardPerShare) / 1e12 - user.rewardDebt;
+        if (pending > 0) {
+            _mint(msg.sender, pending);
+            emit Claimed(msg.sender, pending);
+        }
+
+        user.amount -= amount;
+        user.rewardDebt = (user.amount * accRewardPerShare) / 1e12;
+        totalStaked -= amount;
+
+        _mint(msg.sender, amount); // return staked tokens
+        emit Unstaked(msg.sender, amount);
+    }
+
+    function pendingRewards(address account) public view returns (uint256) {
+        StakeInfo memory user = stakes[account];
+        uint256 tempAcc = accRewardPerShare;
+        if (block.timestamp > lastRewardTime && totalStaked != 0) {
+            uint256 elapsed = block.timestamp - lastRewardTime;
+            uint256 reward = elapsed * rewardRatePerSecond;
+            tempAcc += reward * 1e12 / totalStaked;
+        }
+        return (user.amount * tempAcc) / 1e12 - user.rewardDebt;
+    }
+
+    function setRewardRate(uint256 rate) external onlyRole(GOVERNOR_ROLE) {
+        updateRewards();
+        rewardRatePerSecond = rate;
+    }
+
+    // ================================
+    //         Upgrade Logic
+    // ================================
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+}

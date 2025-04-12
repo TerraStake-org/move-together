@@ -1,0 +1,60 @@
+import { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
+
+const useRealTimeLocation = () => {
+  const [location, setLocation] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let subscription;
+    
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        
+        if (status !== 'granted') {
+          setError('Permission to access location was denied');
+          return;
+        }
+        
+        // Get initial location
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+        
+        // Subscribe to location updates
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 10, // Update every 10 meters
+            timeInterval: 5000, // Update every 5 seconds
+          },
+          (newLocation) => {
+            setLocation({
+              latitude: newLocation.coords.latitude,
+              longitude: newLocation.coords.longitude,
+            });
+          }
+        );
+      } catch (err) {
+        setError(`Couldn't retrieve location: ${err.message}`);
+      }
+    })();
+    
+    // Clean up subscription when component unmounts
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
+
+  return { location, error };
+};
+
+export default useRealTimeLocation;

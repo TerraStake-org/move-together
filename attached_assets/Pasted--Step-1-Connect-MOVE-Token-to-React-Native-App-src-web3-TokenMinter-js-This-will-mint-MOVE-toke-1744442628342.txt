@@ -1,0 +1,74 @@
+ Step 1: Connect MOVE Token to React Native App
+📁 src/web3/TokenMinter.js
+
+This will mint MOVE tokens when the user walks or checks into a location.
+
+import { ethers } from 'ethers';
+import MoveTokenABI from '../../abis/MoveToken.json';
+
+const MOVE_TOKEN_ADDRESS = '0xYourDeployedMoveTokenAddress'; // Replace with real contract address
+
+export const mintMoveTokens = async (userAddress, amount, signer) => {
+  try {
+    const contract = new ethers.Contract(MOVE_TOKEN_ADDRESS, MoveTokenABI, signer);
+    const tx = await contract.mint(userAddress, ethers.utils.parseUnits(amount.toString(), 18));
+    await tx.wait();
+    return { success: true, hash: tx.hash };
+  } catch (error) {
+    console.error('Mint error:', error);
+    return { success: false, error };
+  }
+};
+
+✅ Step 2: Integrate Mint on Distance
+
+Inside your GPS tracking logic (RealTimeLocationMap.js or a background worker), when the user hits a milestone:
+
+import { mintMoveTokens } from '../web3/TokenMinter';
+import WalletConnector from '../web3/WalletConnector'; // handles signer
+
+const rewardUserIfEligible = async (distanceWalkedInKm) => {
+  if (distanceWalkedInKm >= 1) {
+    const { address, signer } = await WalletConnector.getSigner();
+    const result = await mintMoveTokens(address, 1, signer);
+    if (result.success) {
+      Alert.alert("🎉 Earned MOVE", `You earned 1 MOVE for 1km!`);
+    } else {
+      console.error(result.error);
+    }
+  }
+};
+
+✅ Step 3: Optional NFT Milestone (GeoNFT.sol)
+
+You can use a similar hook like this:
+
+import GeoNFTABI from '../../abis/GeoNFT.json';
+
+export const mintGeoNFT = async (locationTag, signer) => {
+  const contract = new ethers.Contract('0xGeoNFTContractAddress', GeoNFTABI, signer);
+  const tx = await contract.mintBadge(locationTag); // implement logic in GeoNFT.sol
+  await tx.wait();
+  return tx.hash;
+};
+
+✅ Step 4: UI Display (Token Balance & Milestones)
+
+Inside your dashboard component:
+
+import { ethers } from 'ethers';
+import MoveTokenABI from '../../abis/MoveToken.json';
+
+const fetchBalance = async (userAddress, provider) => {
+  const contract = new ethers.Contract(MOVE_TOKEN_ADDRESS, MoveTokenABI, provider);
+  const balance = await contract.balanceOf(userAddress);
+  return ethers.utils.formatUnits(balance, 18);
+};
+
+✅ Optional: Web3 Setup
+
+    WalletConnector.js handles MetaMask (web) or WalletConnect (mobile)
+
+    Use ethers.js for all interactions
+
+    Add your ABI JSON in abis/
