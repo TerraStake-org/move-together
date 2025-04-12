@@ -304,6 +304,32 @@ export default function ModernMap({
     setMapType(mapStyleForTheme);
   }, [theme]);
   
+  // Generate synthetic grid for map-like appearance
+  const generateMapGrid = () => {
+    // Create a virtual grid based on current location
+    const gridSize = 20;
+    let gridLines = [];
+    
+    // Generate horizontal and vertical grid lines
+    for (let i = 0; i <= gridSize; i++) {
+      gridLines.push(`linear-gradient(0deg, 
+        transparent calc(${i * (100/gridSize)}% - 1px), 
+        rgba(255,255,255,0.1) calc(${i * (100/gridSize)}% - 1px), 
+        rgba(255,255,255,0.1) calc(${i * (100/gridSize)}% + 1px),
+        transparent calc(${i * (100/gridSize)}% + 1px)
+      )`);
+      
+      gridLines.push(`linear-gradient(90deg, 
+        transparent calc(${i * (100/gridSize)}% - 1px), 
+        rgba(255,255,255,0.1) calc(${i * (100/gridSize)}% - 1px), 
+        rgba(255,255,255,0.1) calc(${i * (100/gridSize)}% + 1px),
+        transparent calc(${i * (100/gridSize)}% + 1px)
+      )`);
+    }
+    
+    return gridLines.join(', ');
+  };
+
   // Map background patterns for different styles
   const getMapPattern = () => {
     const currentStyle = modernMapStyles[mapType];
@@ -312,19 +338,60 @@ export default function ModernMap({
       backgroundImage: currentStyle.pattern
     };
   };
+  
+  // Calculate map elements based on imaginary coordinates
+  const getMapElements = () => {
+    if (!location) return [];
+    
+    // Create virtual streets and landmarks around the current point
+    const result = [];
+    const baseLatitude = location.latitude;
+    const baseLongitude = location.longitude;
+    
+    // Create main avenues
+    for (let i = -2; i <= 2; i++) {
+      result.push({
+        type: 'avenue',
+        position: { top: `${50 + i * 15}%`, left: '0%', width: '100%', height: '4px' }
+      });
+      
+      result.push({
+        type: 'avenue',
+        position: { top: '0%', left: `${50 + i * 15}%`, width: '4px', height: '100%' }
+      });
+    }
+    
+    // Create some landmarks
+    result.push({
+      type: 'park',
+      position: { top: '35%', left: '35%', width: '15%', height: '15%' }
+    });
+    
+    result.push({
+      type: 'district',
+      position: { top: '60%', left: '25%', width: '20%', height: '20%' }
+    });
+    
+    result.push({
+      type: 'water',
+      position: { top: '15%', left: '65%', width: '25%', height: '20%' }
+    });
+    
+    return result;
+  };
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       <div 
         ref={containerRef}
-        className="w-full h-[400px] rounded-lg overflow-hidden relative"
+        className="w-full h-full rounded-lg overflow-hidden relative"
         style={{
-          ...getMapPattern(),
           background: mapType === 'neon' 
             ? 'linear-gradient(135deg, #000428 0%, #004e92 100%)' 
             : mapType === 'retro' 
               ? 'linear-gradient(135deg, #e6b980 0%, #eacda3 100%)'
-              : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+              : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+          backgroundImage: generateMapGrid()
         }}
       >
         {/* Canvas for drawing the path */}
