@@ -13,6 +13,7 @@ import BottomNavigation from "@/components/ui/BottomNavigation";
 import { Web3Provider } from "@/context/Web3Context";
 import { LocationProvider } from "@/context/LocationContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { PlaceDiscoveryProvider } from "@/context/PlaceDiscoveryContext";
 import { useEffect, useState } from "react";
 
 function Router() {
@@ -62,10 +63,12 @@ function App() {
       <Web3Provider>
         <LocationProvider>
           <ThemeProvider>
-            <div className="flex flex-col min-h-screen bg-dark text-white">
-              <Router />
-              <Toaster />
-            </div>
+            <PlaceDiscoveryProvider>
+              <div className="flex flex-col min-h-screen bg-dark text-white">
+                <Router />
+                <Toaster />
+              </div>
+            </PlaceDiscoveryProvider>
           </ThemeProvider>
         </LocationProvider>
       </Web3Provider>

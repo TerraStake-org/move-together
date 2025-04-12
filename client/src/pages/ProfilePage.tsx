@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useWeb3 } from '@/context/Web3Context';
+import { usePlaceDiscovery } from '@/context/PlaceDiscoveryContext';
 import useTts from '@/hooks/useTts';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { formatAddress } from '@/lib/utils';
 import { User } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
+import BadgeCollection from '@/components/discovery/BadgeCollection';
 
 export default function ProfilePage() {
   const { toast } = useToast();

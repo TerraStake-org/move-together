@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext';
 import { useWeb3 } from '@/context/Web3Context';
 import { useTheme } from '@/context/ThemeContext';
+import { usePlaceDiscovery } from '@/context/PlaceDiscoveryContext';
 import ModernMap from '@/components/map/ModernMap';
 import RealTimeLocationMap from '@/components/map/RealTimeLocationMap';
 import ActivityStats from '@/components/ActivityStats';
@@ -14,6 +15,8 @@ import StakeModal from '@/components/modals/StakeModal';
 import RewardDetailsModal from '@/components/modals/RewardDetailsModal';
 import LocationNFTMinter from '@/components/nft/LocationNFTMinter';
 import LocationNFTCollection from '@/components/nft/LocationNFTCollection';
+import DiscoveryLayer from '@/components/discovery/DiscoveryLayer';
+import BadgeCollection from '@/components/discovery/BadgeCollection';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
@@ -22,7 +25,7 @@ import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
 import { MintedNFT } from '@/web3/LocationNFT';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, Map as MapIcon } from 'lucide-react';
+import { Camera, Map as MapIcon, Award, Headphones } from 'lucide-react';
 
 interface MoveStats {
   distance: number;
@@ -290,20 +293,24 @@ export default function MapView() {
           </div>
         </div>
         
-        {/* Conditional rendering of map components */}
-        {mapType === 'modern' ? (
-          <ModernMap 
-            location={location}
-            onZoomIn={() => {}}
-            onZoomOut={() => {}}
-            onToggleMapType={() => {}}
-            onGoToCurrentLocation={() => {}}
-          />
-        ) : (
-          <div className="h-[400px] w-full">
-            <RealTimeLocationMap />
-          </div>
-        )}
+        {/* Conditional rendering of map components with discovery layer */}
+        <DiscoveryLayer
+          mapComponent={
+            mapType === 'modern' ? (
+              <ModernMap 
+                location={location}
+                onZoomIn={() => {}}
+                onZoomOut={() => {}}
+                onToggleMapType={() => {}}
+                onGoToCurrentLocation={() => {}}
+              />
+            ) : (
+              <div className="h-[400px] w-full">
+                <RealTimeLocationMap />
+              </div>
+            )
+          }
+        />
         
         {/* Voice Command Button */}
         <div className="absolute bottom-24 left-4">
