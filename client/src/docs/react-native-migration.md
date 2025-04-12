@@ -117,32 +117,100 @@ navigator.geolocation.watchPosition()
 ```
 
 ### React Native Implementation
-For React Native, use expo-location:
+For React Native, use expo-location with a comprehensive approach that includes:
+
+1. Permission handling
+2. Background tracking capability
+3. Anti-cheat mechanisms
+4. AsyncStorage for offline data persistence
+5. Battery optimization
+
+A complete implementation is available at `client/src/docs/useRealTimeLocationRN-mock.ts`, which demonstrates:
+
 ```javascript
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Request permissions
-const { status } = await Location.requestForegroundPermissionsAsync();
-
-// Get current location
-const currentLocation = await Location.getCurrentPositionAsync({
-  accuracy: Location.Accuracy.High
-});
-
-// Subscribe to location updates
-const subscription = await Location.watchPositionAsync(
-  {
-    accuracy: Location.Accuracy.High,
-    distanceInterval: 10, // Update every 10 meters
-    timeInterval: 5000, // Update every 5 seconds
-  },
-  (newLocation) => {
-    // Handle location update
+// Request both foreground and background permissions
+const requestPermissions = async () => {
+  const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
+  
+  if (foregroundStatus !== 'granted') {
+    return false;
   }
-);
+  
+  const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+  return backgroundStatus === 'granted';
+};
 
-// Clean up
-subscription.remove();
+// Start location tracking with anti-cheat
+const startTracking = async () => {
+  // Get initial location
+  const currentLocation = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.High
+  });
+  
+  // Subscribe to location updates
+  locationSubscription.current = await Location.watchPositionAsync(
+    {
+      accuracy: Location.Accuracy.High,
+      distanceInterval: 10, // Update every 10 meters
+      timeInterval: 5000    // Or every 5 seconds
+    },
+    newLocation => {
+      // Anti-cheat: verify location change is reasonable
+      if (previousLocation) {
+        const isReasonable = isLocationChangeReasonable(
+          previousLocation,
+          newLocation.coords,
+          60, // Max speed in km/h
+          5   // Minimum accuracy in meters
+        );
+        
+        if (!isReasonable) {
+          console.warn('Suspicious movement detected');
+          return;
+        }
+        
+        // Calculate distance and update rewards
+        updateDistance(newLocation.coords);
+      }
+      
+      // Update location state
+      setLocation(newLocation.coords);
+      previousLocation = newLocation.coords;
+    }
+  );
+};
+
+// Save location data for offline use
+const saveLocationHistory = async () => {
+  await AsyncStorage.setItem(
+    'locationHistory',
+    JSON.stringify(locationHistory)
+  );
+  
+  await AsyncStorage.setItem(
+    'totalDistance',
+    totalDistance.toString()
+  );
+};
+
+// Battery optimization with background modes
+const setupBackgroundTracking = async () => {
+  await Location.startLocationUpdatesAsync('background-location-task', {
+    accuracy: Location.Accuracy.Balanced,
+    distanceInterval: 100,    // Less frequent updates in background
+    timeInterval: 60000,      // Update every minute in background
+    foregroundService: {
+      notificationTitle: "Move to Earn",
+      notificationBody: "Tracking your movement in background"
+    },
+    // iOS background mode with significant changes only
+    pausesUpdatesAutomatically: true,
+    activityType: Location.ActivityType.Fitness
+  });
+};
 ```
 
 ## Map Component
@@ -151,34 +219,108 @@ subscription.remove();
 The web version uses a custom canvas-based implementation with manual path drawing.
 
 ### React Native Implementation
-Replace with react-native-maps:
-```javascript
-import MapView, { Marker, Polyline } from 'react-native-maps';
+A complete implementation is available in `client/src/docs/RealTimeLocationMapRN-mock.tsx`, which demonstrates:
 
-// Basic map with marker
-<MapView
-  style={{ flex: 1 }}
-  region={{
-    latitude: location.latitude,
-    longitude: location.longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  }}
-  showsUserLocation={true}
-  followsUserLocation={true}
->
-  <Marker
-    coordinate={location}
-    title="Your Location"
-  />
+1. Map display with react-native-maps
+2. Location tracking with accuracy circles
+3. Path drawing with Polyline
+4. Performance optimizations
+5. User controls for map type and centering
+6. Tracking session statistics
+
+The core implementation includes:
+
+```javascript
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import MapView, { Marker, Polyline, Circle } from 'react-native-maps';
+import { useRealTimeLocationRN } from '../hooks/useRealTimeLocationRN';
+
+const RealTimeLocationMap = () => {
+  // Get location data from our custom hook
+  const { location, locationHistory, isTracking } = useRealTimeLocationRN();
   
-  {/* Path tracking */}
-  <Polyline
-    coordinates={locationHistory}
-    strokeColor="#3b82f6"
-    strokeWidth={3}
-  />
-</MapView>
+  // Keep a reference to the map
+  const mapRef = useRef<MapView>(null);
+  
+  // Center map when location changes
+  useEffect(() => {
+    if (!location || !mapRef.current) return;
+    
+    mapRef.current.animateToRegion({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01
+    }, 500);
+  }, [location]);
+  
+  return (
+    <View style={styles.container}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        showsUserLocation={true}
+        followsUserLocation={true}
+        initialRegion={{
+          latitude: location?.latitude || 0,
+          longitude: location?.longitude || 0,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01
+        }}
+      >
+        {/* Current location marker */}
+        {location && (
+          <Marker
+            coordinate={{
+              latitude: location.latitude, 
+              longitude: location.longitude
+            }}
+            title="Current Location"
+          />
+        )}
+        
+        {/* Location accuracy circle */}
+        {location && (
+          <Circle
+            center={{
+              latitude: location.latitude,
+              longitude: location.longitude
+            }}
+            radius={10} // Accuracy in meters
+            fillColor="rgba(59, 130, 246, 0.2)"
+            strokeColor="rgba(59, 130, 246, 0.5)"
+            strokeWidth={1}
+          />
+        )}
+        
+        {/* Path line */}
+        {locationHistory.length > 1 && (
+          <Polyline
+            coordinates={locationHistory.map(loc => ({
+              latitude: loc.latitude,
+              longitude: loc.longitude
+            }))}
+            strokeColor="#3b82f6"
+            strokeWidth={4}
+          />
+        )}
+      </MapView>
+      
+      {/* Controls, stats, and action buttons would go here */}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+});
 ```
 
 ## UI Components
@@ -204,9 +346,66 @@ The Haversine formula used for distance calculations is pure JavaScript and can 
 
 ## Rewards Integration
 
-The Web3/blockchain integration should work similarly in React Native, but you'll need to:
-1. Use react-native-dotenv for environment variables
-2. Use a React Native compatible Web3 library like ethers.js (which works in React Native)
+A complete implementation of blockchain reward functionality is available in `client/src/docs/TokenMinterRN-mock.ts`. This example demonstrates:
+
+1. Setting up Ethereum providers and wallets in React Native
+2. Creating and recovering wallets with mnemonics
+3. Interacting with MOVE token contracts
+4. Securely storing private keys
+5. Implementing "move-to-earn" reward calculations
+
+The implementation uses ethers.js, which works in React Native:
+
+```javascript
+import { ethers } from 'ethers';
+import Config from 'react-native-config'; // For environment variables
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Get wallet and sign transactions
+const getWallet = async () => {
+  // Get private key from secure storage
+  const privateKey = await AsyncStorage.getItem('wallet_private_key');
+  
+  const provider = new ethers.providers.JsonRpcProvider(
+    Config.ETHEREUM_RPC_URL
+  );
+  
+  const wallet = new ethers.Wallet(privateKey, provider);
+  return wallet;
+};
+
+// Get token contract instance
+const getTokenContract = async (signer) => {
+  return new ethers.Contract(
+    MOVE_TOKEN_ADDRESS, 
+    MOVE_TOKEN_ABI, 
+    signer
+  );
+};
+
+// Reward user based on distance traveled
+export const rewardUserForDistance = async (userAddress, distanceKm) => {
+  // Calculate tokens based on distance (e.g., 10 tokens per km)
+  const tokenAmount = distanceKm * 10;
+  
+  const wallet = await getWallet();
+  const contract = await getTokenContract(wallet);
+  
+  // Call the reward function
+  const tx = await contract.rewardUser(
+    userAddress, 
+    ethers.utils.parseUnits(tokenAmount.toString(), 18)
+  );
+  
+  await tx.wait();
+  
+  return {
+    success: true,
+    hash: tx.hash,
+    amount: tokenAmount
+  };
+};
+```
 
 ## Voice Commands and TTS
 
