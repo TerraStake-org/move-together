@@ -1,0 +1,113 @@
+ 1. App Navigator Setup (src/navigation/AppNavigator.js)
+
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+import RealTimeLocationMap from '../components/RealTimeLocationMap';
+import WalletScreen from '../screens/WalletScreen';
+import RewardsScreen from '../screens/RewardsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+
+const Tab = createBottomTabNavigator();
+
+const AppNavigator = () => {
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
+            switch (route.name) {
+              case 'Map': iconName = 'map-outline'; break;
+              case 'Wallet': iconName = 'wallet-outline'; break;
+              case 'Rewards': iconName = 'gift-outline'; break;
+              case 'Settings': iconName = 'settings-outline'; break;
+              default: iconName = 'ellipse-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#FF6347',
+          tabBarInactiveTintColor: 'gray',
+          tabBarLabelStyle: { fontSize: 12 },
+        })}
+      >
+        <Tab.Screen name="Map" component={RealTimeLocationMap} />
+        <Tab.Screen name="Wallet" component={WalletScreen} />
+        <Tab.Screen name="Rewards" component={RewardsScreen} />
+        <Tab.Screen name="Settings" component={SettingsScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default AppNavigator;
+
+🧠 2. Update Entry File (App.js)
+
+import React from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import AppNavigator from './src/navigation/AppNavigator';
+
+export default function App() {
+  return (
+    <SafeAreaView style={styles.container}>
+      <AppNavigator />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+});
+
+📱 3. Placeholder Screens
+
+📄 src/screens/WalletScreen.js
+
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+const WalletScreen = () => (
+  <View style={styles.container}>
+    <Text style={styles.text}>🪙 Wallet Screen</Text>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  text: { fontSize: 20, fontWeight: 'bold' },
+});
+
+export default WalletScreen;
+
+📄 Repeat for:
+
+    RewardsScreen.js: Replace Wallet with Rewards
+
+    SettingsScreen.js: Replace Wallet with Settings
+
+🛠️ 4. Install Dependencies
+
+npm install @react-navigation/native @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-vector-icons
+
+Expo users:
+
+npx expo install react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated @react-navigation/native @react-navigation/bottom-tabs react-native-vector-icons
+
+✅ Now You're Set!
+
+You’ve got a smooth Google-style GPS UI, a full-featured navigation bar, and room to plug in:
+
+    🪙 Crypto wallets
+
+    🚶 NFT discovery
+
+    💬 Voice feedback
+
+    💰 Rewarding steps & quests
