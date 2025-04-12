@@ -59,12 +59,10 @@ export default function LocationNFTMinter({
   
   // Handler for minting NFT
   const handleMint = async () => {
-    if (!location || !isConnected || !signer || !provider) {
+    if (!isConnected || !signer || !provider) {
       toast({
         title: "Cannot mint NFT",
-        description: !location 
-          ? "No location data available. Make sure tracking is enabled."
-          : "Wallet not connected. Please connect your wallet first.",
+        description: "Wallet not connected. Please connect your wallet first.",
         variant: "destructive"
       });
       return;
@@ -85,12 +83,18 @@ export default function LocationNFTMinter({
       // Get NFT service
       const nftService = getLocationNFTService(provider, signer);
       
+      // Use either active location or default location
+      const nftLocation = location || {
+        latitude: 37.7749,
+        longitude: -122.4194
+      };
+      
       // Mint NFT with current location
       const nft = await nftService.mintCurrentLocation(
         name,
         description,
-        location.latitude,
-        location.longitude
+        nftLocation.latitude,
+        nftLocation.longitude
       );
       
       if (nft) {
@@ -190,61 +194,63 @@ export default function LocationNFTMinter({
       </DialogHeader>
       
       <div className="grid gap-4 py-4">
-        {location ? (
-          <>
-            <div className="aspect-video rounded-md bg-muted overflow-hidden relative">
-              {/* Placeholder for map preview */}
-              <div 
-                className="w-full h-full bg-cover bg-center"
-                style={{
-                  backgroundColor: colors.background,
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23${colors.primary.substring(1)}' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E")`
-                }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="p-2 rounded-full bg-black/50">
-                  <MapPin className="h-8 w-8 text-white" />
-                </div>
-              </div>
+        <div className="aspect-video rounded-md bg-muted overflow-hidden relative">
+          {/* Placeholder for map preview */}
+          <div 
+            className="w-full h-full bg-cover bg-center"
+            style={{
+              backgroundColor: colors.background,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23${colors.primary.substring(1)}' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E")`
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="p-2 rounded-full bg-black/50">
+              <MapPin className="h-8 w-8 text-white" />
             </div>
-            
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-1" />
-              <span>{getAddressString(location.latitude, location.longitude)}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center text-sm text-muted-foreground">
+          <MapPin className="h-4 w-4 mr-1" />
+          <span>
+            {location 
+              ? getAddressString(location.latitude, location.longitude)
+              : "Custom location - Enter details below"}
+          </span>
+        </div>
+        
+        {!location && (
+          <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center">
+            <div className="mr-2 p-1 rounded-full bg-amber-100 dark:bg-amber-900">
+              <MapPin className="h-3 w-3" />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Location Name</Label>
-              <Input
-                id="name"
-                placeholder="My Favorite Hiking Spot"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isMinting}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe what makes this location special..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={isMinting}
-                rows={3}
-              />
-            </div>
-          </>
-        ) : (
-          <div className="py-8 text-center">
-            <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">
-              No location data available. Make sure tracking is enabled.
-            </p>
+            <span>No active location tracking. You can still mint an NFT with custom information.</span>
           </div>
         )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="name">Location Name</Label>
+          <Input
+            id="name"
+            placeholder="My Favorite Hiking Spot"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isMinting}
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="description">Description (Optional)</Label>
+          <Textarea
+            id="description"
+            placeholder="Describe what makes this location special..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={isMinting}
+            rows={3}
+          />
+        </div>
       </div>
       
       <DialogFooter>
@@ -253,7 +259,7 @@ export default function LocationNFTMinter({
         </Button>
         <Button 
           onClick={handleMint} 
-          disabled={isMinting || !location || !isConnected || !name.trim()}
+          disabled={isMinting || !isConnected || !name.trim()}
         >
           {isMinting ? (
             <>
