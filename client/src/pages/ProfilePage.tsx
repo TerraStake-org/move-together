@@ -148,6 +148,14 @@ export default function ProfilePage() {
     voice.language.startsWith(selectedLanguage.split('-')[0])
   );
 
+  // Navigation to map for badges
+  const [, navigate] = useLocation();
+  
+  // Handle viewing a badge on the map
+  const handleViewBadgeOnMap = (placeId: string) => {
+    navigate('/map');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-dark text-light-gray pt-4 px-4 pb-20">
       <h1 className="text-2xl font-bold mb-4">Profile</h1>
@@ -194,6 +202,15 @@ export default function ProfilePage() {
                 </Button>
               </div>
             )}
+          </div>
+          
+          {/* Badge Collection */}
+          <div className="bg-dark rounded-lg p-4">
+            <h3 className="text-md font-medium mb-4 flex items-center">
+              <Award className="h-5 w-5 mr-2 text-primary" />
+              Location Badges
+            </h3>
+            <BadgeCollection onViewOnMap={handleViewBadgeOnMap} />
           </div>
         </CardContent>
       </Card>
