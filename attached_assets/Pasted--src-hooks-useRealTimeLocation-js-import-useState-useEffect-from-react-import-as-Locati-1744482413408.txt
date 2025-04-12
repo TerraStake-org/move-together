@@ -1,0 +1,175 @@
+📁 src/hooks/useRealTimeLocation.js
+
+import { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
+
+const DEFAULT_LOCATION = {
+  latitude: 37.7749,     // San Francisco fallback
+  longitude: -122.4194,
+};
+
+const useRealTimeLocation = () => {
+  const [location, setLocation] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let watcher = null;
+
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setError('Location permission denied');
+          setLocation(DEFAULT_LOCATION); // fallback
+          return;
+        }
+
+        const current = await Location.getCurrentPositionAsync({});
+        setLocation({
+          latitude: current.coords.latitude,
+          longitude: current.coords.longitude,
+        });
+
+        watcher = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 10,
+            timeInterval: 5000,
+          },
+          (loc) => {
+            setLocation({
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+            });
+          }
+        );
+      } catch (err) {
+        setError(err.message);
+        setLocation(DEFAULT_LOCATION); // fallback
+      }
+    })();
+
+    return () => {
+      if (watcher) watcher.remove();
+    };
+  }, []);
+
+  return { location, error };
+};
+
+export default useRealTimeLocation;
+
+📁 src/components/RealTimeLocationMap.js
+
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
+import useRealTimeLocation from '../hooks/useRealTimeLocation';
+
+const RealTimeLocationMap = () => {
+  const { location, error } = useRealTimeLocation();
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Location Error', error);
+    }
+  }, [error]);
+
+  const mapRegion = useMemo(() => {
+    return location
+      ? {
+          ...location,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }
+      : null;
+  }, [location]);
+
+  if (!location) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Loading location or using default...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        region={mapRegion}
+        showsUserLocation={true}
+        followsUserLocation={true}
+        showsCompass={true}
+        showsTraffic={true}
+        customMapStyle={mapStyle}
+        loadingEnabled={true}
+      >
+        <Marker
+          coordinate={location}
+          title="Your Location"
+          description="You're here"
+          pinColor="#ff6347"
+          tracksViewChanges={false}
+        />
+      </MapView>
+    </View>
+  );
+};
+
+const mapStyle = [
+  {
+    elementType: 'geometry',
+    stylers: [{ color: '#ebe3cd' }],
+  },
+  {
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#523735' }],
+  },
+  {
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#f5f1e6' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#f5f1e6' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#c9c9c9' }],
+  },
+];
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  map: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+export default RealTimeLocationMap;
+
+🧪 Optional: Simulate Walking on Laptop
+
+If you're testing on a laptop without GPS, add this inside useEffect in your hook:
+
+// If no GPS, simulate slow north walk every 5 sec
+let fakeLat = DEFAULT_LOCATION.latitude;
+let fakeLng = DEFAULT_LOCATION.longitude;
+const simulate = setInterval(() => {
+  fakeLat += 0.0001;
+  setLocation({ latitude: fakeLat, longitude: fakeLng });
+}, 5000);
+
+Would you like to now add a crypto reward engine for each kilometer walked?

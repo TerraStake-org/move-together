@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from '@/context/LocationContext';
 import { useWeb3 } from '@/context/Web3Context';
 import ModernMap from '@/components/map/ModernMap';
+import RealTimeLocationMap from '@/components/map/RealTimeLocationMap';
 import ActivityStats from '@/components/ActivityStats';
 import TokenOverview from '@/components/TokenOverview';
 import Achievements from '@/components/Achievements';
@@ -27,6 +28,7 @@ export default function MapView() {
   const { address, signer, isConnected, connect } = useWeb3();
   const { toast } = useToast();
 
+  const [mapType, setMapType] = useState<'modern' | 'real-time'>('modern');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const [isRewardDetailsModalOpen, setIsRewardDetailsModalOpen] = useState(false);
@@ -210,13 +212,42 @@ export default function MapView() {
       
       {/* MAP VIEW */}
       <div className="relative">
-        <ModernMap 
-          location={location}
-          onZoomIn={() => {}}
-          onZoomOut={() => {}}
-          onToggleMapType={() => {}}
-          onGoToCurrentLocation={() => {}}
-        />
+        {/* Tab buttons for map types */}
+        <div className="absolute top-4 left-0 right-0 z-10 flex justify-center">
+          <div className="bg-dark-gray/80 backdrop-blur-sm rounded-full p-1 flex">
+            <Button
+              variant="ghost"
+              size="sm" 
+              className={`rounded-full text-xs ${mapType === 'modern' ? 'bg-primary text-white' : 'bg-transparent'}`}
+              onClick={() => setMapType('modern')}
+            >
+              Modern
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`rounded-full text-xs ${mapType === 'real-time' ? 'bg-primary text-white' : 'bg-transparent'}`}
+              onClick={() => setMapType('real-time')}
+            >
+              Real-Time
+            </Button>
+          </div>
+        </div>
+        
+        {/* Conditional rendering of map components */}
+        {mapType === 'modern' ? (
+          <ModernMap 
+            location={location}
+            onZoomIn={() => {}}
+            onZoomOut={() => {}}
+            onToggleMapType={() => {}}
+            onGoToCurrentLocation={() => {}}
+          />
+        ) : (
+          <div className="h-[400px] w-full">
+            <RealTimeLocationMap />
+          </div>
+        )}
         
         {/* Voice Command Button */}
         <Button

@@ -145,7 +145,17 @@ export const useRealTimeLocation = () => {
       setWatchId(null);
     }
     setIsTracking(false);
-  }, [watchId]);
+    
+    // Here we would integrate with the MOVE token reward system
+    // This is where we would call the rewardUserForDistance function
+    console.log(`Tracking stopped. Total distance: ${totalDistance.toFixed(2)} km`);
+    
+    // For demo purposes only - log the reward they would receive
+    if (totalDistance > 0.1) { // Only reward if they moved more than 100m
+      console.log(`You would earn ${totalDistance.toFixed(2)} MOVE tokens!`);
+      // In a production app, we would call the blockchain function here
+    }
+  }, [watchId, totalDistance]);
 
   // Initialize - get initial location but don't start tracking yet
   useEffect(() => {
