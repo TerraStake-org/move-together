@@ -4,6 +4,7 @@ import { useWeb3 } from '@/context/Web3Context';
 import { useTheme } from '@/context/ThemeContext';
 import { usePlaceDiscovery } from '@/context/PlaceDiscoveryContext';
 import SimpleMap from '@/components/map/SimpleMap';
+import MapLibreMap from '@/components/map/MapLibreMap';
 import ActivityStats from '@/components/ActivityStats';
 import TokenOverview from '@/components/TokenOverview';
 import Achievements from '@/components/Achievements';
@@ -39,7 +40,7 @@ export default function MapView() {
   const { toast } = useToast();
   
   // UI states
-  const [mapType, setMapType] = useState<'modern' | 'real-time'>('modern');
+  const [mapType, setMapType] = useState<'modern' | 'real-time' | 'offline'>('modern');
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
   const [isRewardDetailsModalOpen, setIsRewardDetailsModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -233,14 +234,20 @@ export default function MapView() {
     <div className="flex flex-col h-screen bg-slate-900">
       {/* Fullscreen map container positioned at the bottom layer */}
       <div className="absolute inset-0 w-full h-full z-0">
-        {/* Use SimpleMap instead - it has no external dependencies */}
-        <SimpleMap 
-          location={location}
-          onZoomIn={() => {}}
-          onZoomOut={() => {}}
-          onToggleMapType={() => setMapType(mapType === 'modern' ? 'real-time' : 'modern')}
-          onGoToCurrentLocation={() => {}}
-        />
+        {mapType === 'offline' ? (
+          <MapLibreMap 
+            location={location}
+            onToggleMapType={() => setMapType('modern')}
+          />
+        ) : (
+          <SimpleMap 
+            location={location}
+            onZoomIn={() => {}}
+            onZoomOut={() => {}}
+            onToggleMapType={() => setMapType(mapType === 'modern' ? 'real-time' : 'modern')}
+            onGoToCurrentLocation={() => {}}
+          />
+        )}
       </div>
       
       {/* Discovery layer over the map */}
@@ -268,6 +275,14 @@ export default function MapView() {
                 onClick={() => setMapType('real-time')}
               >
                 Real-Time
+              </Button>
+              <Button 
+                variant={mapType === 'offline' ? "default" : "outline"} 
+                size="sm" 
+                className={`rounded-full ${mapType === 'offline' ? 'bg-purple-700 hover:bg-purple-800' : 'text-slate-400'}`}
+                onClick={() => setMapType('offline')}
+              >
+                Offline
               </Button>
             </div>
           </div>

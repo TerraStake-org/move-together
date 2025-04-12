@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import { useLocation } from '@/context/LocationContext';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 // Define our map style
-const mapStyle = {
+const mapStyle: StyleSpecification = {
   version: 8,
   sources: {
     vectorTiles: {
@@ -83,11 +83,21 @@ interface MapLibreMapProps {
   onToggleMapType: () => void;
 }
 
+// Type for GeoJSON line data
+interface LineStringFeature {
+  type: 'Feature';
+  properties: Record<string, any>;
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][];
+  };
+}
+
 const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const marker = useRef<maplibregl.Marker | null>(null);
-  const userPath = useRef<maplibregl.LineString | null>(null);
+  const userPath = useRef<LineStringFeature | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [pathSource, setPathSource] = useState<string | null>(null);
   const { isTracking, locations } = useLocation();
@@ -173,7 +183,8 @@ const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) 
   useEffect(() => {
     if (!map.current || !mapReady || !location) return;
     
-    const lngLat = [location.longitude, location.latitude];
+    // Create a properly typed [lng, lat] tuple
+    const lngLat: [number, number] = [location.longitude, location.latitude];
     
     // Create or update marker
     if (!marker.current) {
@@ -210,20 +221,24 @@ const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) 
   useEffect(() => {
     if (!map.current || !mapReady || !pathSource || locations.length < 2) return;
     
-    const coordinates = locations.map(loc => [loc.longitude, loc.latitude]);
+    // Ensure each coordinate is a [longitude, latitude] tuple with proper typing
+    const coordinates: [number, number][] = locations.map(loc => [loc.longitude, loc.latitude] as [number, number]);
     
     // Update path data
     if (map.current) {
       const source = map.current.getSource(pathSource);
       if (source && 'setData' in source) {
-        source.setData({
+        const geoJsonData: LineStringFeature = {
           type: 'Feature',
           properties: {},
           geometry: {
             type: 'LineString',
             coordinates
           }
-        });
+        };
+        
+        // Now we can safely call setData with our properly typed GeoJSON
+        (source as any).setData(geoJsonData);
       }
     }
   }, [locations, mapReady, pathSource]);
