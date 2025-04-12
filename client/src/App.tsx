@@ -9,6 +9,7 @@ import WalletScreen from "@/pages/WalletScreen";
 import RewardsPage from "@/pages/RewardsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import BottomNavigation from "@/components/ui/BottomNavigation";
+import { Web3Provider } from "@/context/Web3Context";
 import { useEffect, useState } from "react";
 
 function Router() {
@@ -29,9 +30,9 @@ function Router() {
     <>
       <Switch>
         <Route path="/" component={MapView} />
-        <Route path="/wallet" component={ActivityPage} /> {/* Using ActivityPage as a placeholder for WalletScreen */}
+        <Route path="/wallet" component={WalletScreen} />
         <Route path="/rewards" component={RewardsPage} />
-        <Route path="/profile" component={ProfilePage} /> {/* Using ProfilePage as a placeholder for SettingsScreen */}
+        <Route path="/profile" component={ProfilePage} /> {/* Settings equivalent in the web version */}
         <Route component={NotFound} />
       </Switch>
       <BottomNavigation activeTab={activeTab} />
