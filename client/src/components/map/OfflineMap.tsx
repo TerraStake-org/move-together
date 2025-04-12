@@ -71,11 +71,22 @@ export default function OfflineMap({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Set line style
-    ctx.lineWidth = 3;
+    // Set line style based on map type
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#3b82f6'; // Primary color
+    
+    // Use colors that match our retro nature theme when in terrain mode
+    if (mapType === 'terrain') {
+      // Create gradient for path
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#f8c967'); // Golden color for highways
+      gradient.addColorStop(0.5, '#a7bd74'); // Green for nature areas
+      gradient.addColorStop(1, '#f8c967');
+      ctx.strokeStyle = gradient;
+    } else {
+      ctx.strokeStyle = '#3b82f6'; // Primary color for dark/satellite modes
+    }
     
     // Find min/max coords to determine bounds
     let minLat = Number.MAX_VALUE;
@@ -131,20 +142,35 @@ export default function OfflineMap({
     
     ctx.stroke();
     
-    // Draw points along the path
+    // Draw points along the path with retro nature theme when in terrain mode
     locationHistory.forEach((loc, index) => {
       const { x, y } = latLngToCanvas(loc.latitude, loc.longitude);
       
       // Draw larger marker for start and current position
       if (index === 0 || index === locationHistory.length - 1) {
-        ctx.fillStyle = index === 0 ? '#10b981' : '#3b82f6';
+        // Start point is green, current point is blue (or themed colors in terrain mode)
+        const startColor = mapType === 'terrain' ? '#a7bd74' : '#10b981'; // Green
+        const currentColor = mapType === 'terrain' ? '#f8c967' : '#3b82f6'; // Golden/Blue
+        
+        ctx.fillStyle = index === 0 ? startColor : currentColor;
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Add ring around important points
+        if (mapType === 'terrain') {
+          ctx.strokeStyle = index === 0 ? '#83945c' : '#e5b75f'; // Darker version of fill
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
       } else if (index % 5 === 0) { // Draw smaller markers every few points
-        ctx.fillStyle = '#3b82f6';
+        ctx.fillStyle = mapType === 'terrain' ? 
+          (index % 15 === 0 ? '#c6bb9f' : '#abd9c6') : // Alternate earth tones and water tones
+          '#3b82f6'; // Default blue
         ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.arc(x, y, mapType === 'terrain' ? 4 : 3, 0, Math.PI * 2);
         ctx.fill();
       }
     });
@@ -177,7 +203,7 @@ export default function OfflineMap({
   const getMapBackground = () => {
     switch (mapType) {
       case 'satellite': return '#263238';
-      case 'terrain': return '#2d3742';
+      case 'terrain': return '#e8ddcb'; // Use our retro nature style base color
       default: return '#242f3e';
     }
   };
@@ -188,7 +214,10 @@ export default function OfflineMap({
     backgroundColor: getMapBackground(),
     position: 'relative' as const,
     overflow: 'hidden' as const,
-    color: 'white'
+    color: 'white',
+    backgroundImage: mapType === 'terrain' ? 
+      'url("data:image/svg+xml,%3Csvg width=\'100%25\' height=\'100%25\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cdefs%3E%3Cpattern id=\'smallGrid\' width=\'8\' height=\'8\' patternUnits=\'userSpaceOnUse\'%3E%3Cpath d=\'M 8 0 L 0 0 0 8\' fill=\'none\' stroke=\'%23d9ccb0\' stroke-width=\'0.5\'/%3E%3C/pattern%3E%3Cpattern id=\'grid\' width=\'80\' height=\'80\' patternUnits=\'userSpaceOnUse\'%3E%3Crect width=\'80\' height=\'80\' fill=\'url(%23smallGrid)\'/%3E%3Cpath d=\'M 80 0 L 0 0 0 80\' fill=\'none\' stroke=\'%23c6bb9f\' stroke-width=\'1\'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width=\'100%25\' height=\'100%25\' fill=\'url(%23grid)\' /%3E%3C/svg%3E")' : 
+      'none'
   };
   
   return (
@@ -203,27 +232,48 @@ export default function OfflineMap({
         />
         
         {/* Map UI */}
-        <div className="w-full h-full flex flex-col items-center justify-center bg-dark-gray">
+        <div className="w-full h-full flex flex-col items-center justify-center" style={{
+          background: mapType === 'terrain' ? 'transparent' : 'var(--dark-gray)',
+          backgroundImage: mapType === 'terrain' ? 
+            'radial-gradient(circle, rgba(169,189,142,0.1) 0%, rgba(232,221,203,0.05) 70%)' : 
+            'none'
+        }}>
           {/* Status Info Box */}
-          <div className="absolute top-4 left-4 bg-dark/80 rounded-lg p-3 z-10 text-left max-w-[200px]">
+          <div className={`absolute top-4 left-4 ${
+            mapType === 'terrain'
+              ? 'bg-amber-800/70 text-amber-50 border border-amber-600/50'
+              : 'bg-dark/80'
+          } rounded-lg p-3 z-10 text-left max-w-[200px]`}>
             <div className="text-sm font-medium mb-1">
-              <span className={`inline-block w-2 h-2 rounded-full ${isTracking ? 'bg-secondary animate-pulse' : 'bg-gray-500'} mr-2`}></span>
+              <span className={`inline-block w-2 h-2 rounded-full ${
+                isTracking 
+                  ? (mapType === 'terrain' ? 'bg-amber-400 animate-pulse' : 'bg-secondary animate-pulse') 
+                  : 'bg-gray-500'
+              } mr-2`}></span>
               {isTracking ? 'GPS Tracking Active' : 'Tracking Paused'}
             </div>
-            <div className="text-xs text-gray-300 mb-1">
+            <div className={`text-xs ${mapType === 'terrain' ? 'text-amber-200' : 'text-gray-300'} mb-1`}>
               Current coordinates:
             </div>
-            <p className="font-mono text-xs text-primary truncate">{formattedCoords}</p>
+            <p className={`font-mono text-xs ${
+              mapType === 'terrain' ? 'text-amber-300' : 'text-primary'
+            } truncate`}>{formattedCoords}</p>
             
             {isTracking && (
-              <div className="mt-2 text-xs text-gray-300">
-                Distance: <span className="text-secondary">{totalDistance.toFixed(2)} km</span>
+              <div className={`mt-2 text-xs ${mapType === 'terrain' ? 'text-amber-200' : 'text-gray-300'}`}>
+                Distance: <span className={mapType === 'terrain' ? 'text-amber-300 font-semibold' : 'text-secondary'}>
+                  {totalDistance.toFixed(2)} km
+                </span>
               </div>
             )}
           </div>
           
           {/* Map Type Indicator */}
-          <div className="absolute top-4 right-16 bg-dark/80 rounded-lg px-2 py-1 text-xs font-mono">
+          <div className={`absolute top-4 right-16 ${
+            mapType === 'terrain'
+              ? 'bg-amber-800/70 text-amber-50 border border-amber-600/50'
+              : 'bg-dark/80'
+          } rounded-lg px-2 py-1 text-xs font-mono`}>
             {mapType.charAt(0).toUpperCase() + mapType.slice(1)}
           </div>
           
@@ -236,18 +286,34 @@ export default function OfflineMap({
             }}>
               <div className="relative">
                 {/* Accuracy circle */}
-                <div className="absolute w-20 h-20 rounded-full bg-primary bg-opacity-10 animate-pulse" 
+                <div className={`absolute w-20 h-20 rounded-full ${
+                  mapType === 'terrain' 
+                    ? 'bg-amber-500 bg-opacity-10' 
+                    : 'bg-primary bg-opacity-10'
+                } animate-pulse`} 
                   style={{ top: '-40px', left: '-40px' }}></div>
                 
                 {/* Direction indicator (animated when moving) */}
                 {isTracking && (
                   <div className="absolute w-0 h-0" style={{ top: '-4px', left: '-6px' }}>
-                    <div className="w-12 h-12 border-t-4 border-primary rotate-45 rounded-full border-l-transparent border-r-transparent border-b-transparent"></div>
+                    <div className={`w-12 h-12 border-t-4 ${
+                      mapType === 'terrain' 
+                        ? 'border-amber-600' 
+                        : 'border-primary'
+                    } rotate-45 rounded-full border-l-transparent border-r-transparent border-b-transparent`}></div>
                   </div>
                 )}
                 
                 {/* User location dot */}
-                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <div className={`w-6 h-6 rounded-full ${
+                  mapType === 'terrain' 
+                    ? 'bg-amber-600' 
+                    : 'bg-primary'
+                } flex items-center justify-center ${
+                  mapType === 'terrain' 
+                    ? 'ring-2 ring-amber-800 ring-opacity-50' 
+                    : ''
+                }`}>
                   <div className="w-3 h-3 rounded-full bg-white"></div>
                 </div>
               </div>
@@ -270,7 +336,10 @@ export default function OfflineMap({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-dark-gray/80 hover:bg-dark-gray p-2 rounded-full shadow-lg"
+            className={`${mapType === 'terrain' ? 
+              'bg-amber-50/80 hover:bg-amber-50 text-amber-900' : 
+              'bg-dark-gray/80 hover:bg-dark-gray'} 
+              p-2 rounded-full shadow-lg`}
             onClick={handleZoomIn}
           >
             <span className="material-icons">add</span>
@@ -278,7 +347,10 @@ export default function OfflineMap({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-dark-gray/80 hover:bg-dark-gray p-2 rounded-full shadow-lg"
+            className={`${mapType === 'terrain' ? 
+              'bg-amber-50/80 hover:bg-amber-50 text-amber-900' : 
+              'bg-dark-gray/80 hover:bg-dark-gray'} 
+              p-2 rounded-full shadow-lg`}
             onClick={handleZoomOut}
           >
             <span className="material-icons">remove</span>
@@ -286,7 +358,10 @@ export default function OfflineMap({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-dark-gray/80 hover:bg-dark-gray p-2 rounded-full shadow-lg"
+            className={`${mapType === 'terrain' ? 
+              'bg-amber-50/80 hover:bg-amber-50 text-amber-900' : 
+              'bg-dark-gray/80 hover:bg-dark-gray'} 
+              p-2 rounded-full shadow-lg`}
             onClick={handleToggleMapType}
           >
             <span className="material-icons">layers</span>
@@ -296,14 +371,22 @@ export default function OfflineMap({
         {/* Current Location Button */}
         <Button 
           variant="default"
-          className="absolute bottom-24 right-4 bg-primary hover:bg-primary/90 p-2 rounded-full shadow-lg"
+          className={`absolute bottom-24 right-4 ${
+            mapType === 'terrain' 
+              ? 'bg-amber-600 hover:bg-amber-700 text-amber-50' 
+              : 'bg-primary hover:bg-primary/90'
+          } p-2 rounded-full shadow-lg`}
           onClick={onGoToCurrentLocation}
         >
           <span className="material-icons">my_location</span>
         </Button>
         
         {/* Zoom Level */}
-        <div className="absolute bottom-4 left-4 text-xs font-mono bg-dark/80 px-2 py-1 rounded-md">
+        <div className={`absolute bottom-4 left-4 text-xs font-mono ${
+          mapType === 'terrain' 
+            ? 'bg-amber-800/70 text-amber-50' 
+            : 'bg-dark/80'
+        } px-2 py-1 rounded-md`}>
           Zoom: {mapZoom}
         </div>
       </div>
