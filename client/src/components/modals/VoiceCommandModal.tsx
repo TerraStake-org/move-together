@@ -42,8 +42,22 @@ export default function VoiceCommandModal({ isOpen, onClose }: VoiceCommandModal
           setIsLoading(true);
           const res = await apiRequest('GET', `/api/voice-commands?language=${language}`, undefined);
           const data = await res.json();
-          setCommands(data);
+          
+          // Ensure data.commands exists and is an array
+          if (data && data.commands && Array.isArray(data.commands)) {
+            setCommands(data.commands);
+          } else {
+            console.error('Unexpected response format:', data);
+            setCommands([]);
+            toast({
+              title: "Data Format Error",
+              description: "Received unexpected data format from server.",
+              variant: "destructive",
+            });
+          }
         } catch (error) {
+          console.error('Error fetching voice commands:', error);
+          setCommands([]);
           toast({
             title: "Failed to load voice commands",
             description: "Could not retrieve the available commands.",

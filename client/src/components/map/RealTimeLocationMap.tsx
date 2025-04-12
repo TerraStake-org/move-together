@@ -78,17 +78,34 @@ export default function RealTimeLocationMap({ location, onToggleMapType }: RealT
     // Skip if already loaded or no window (SSR)
     if (mapLoaded || typeof window === 'undefined') return;
 
+    // Function to initialize the map element
+    const prepareMapElement = () => {
+      // Make sure any existing map element is cleared
+      const container = document.getElementById('map');
+      if (container) {
+        // Clear container's content safely
+        while (container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+      }
+    };
+
     // Check if Google Maps API is loaded
     if (!window.google?.maps) {
+      prepareMapElement(); // Clean the map container first
+      
+      // Create a brand new script element
       const script = document.createElement('script');
-      // For development, we'll use a fallback approach without a key
       script.src = `https://maps.googleapis.com/maps/api/js?libraries=places`;
       script.async = true;
       script.defer = true;
-      script.onload = initializeMap;
-      document.head.appendChild(script);
       
-      // Handle script error (API key issues, network problems, etc.)
+      // Set up success and error handlers
+      script.onload = () => {
+        // Short delay to ensure Google Maps is fully initialized
+        setTimeout(initializeMap, 100);
+      };
+      
       script.onerror = () => {
         console.error("Failed to load Google Maps API");
         setMapLoaded(true); // Mark as loaded to prevent continuous retry
@@ -98,7 +115,11 @@ export default function RealTimeLocationMap({ location, onToggleMapType }: RealT
           variant: "destructive"
         });
       };
+      
+      // Append script to head
+      document.head.appendChild(script);
     } else {
+      prepareMapElement();
       initializeMap();
     }
 
