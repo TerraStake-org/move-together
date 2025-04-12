@@ -48,8 +48,50 @@ export function formatAddress(address: string): string {
 }
 
 export function calculateReward(distanceKm: number): number {
-  // Simple 1:1 ratio - 1 km = 1 MOVE token
-  return distanceKm;
+  // Base reward: 1 MOVE token per km
+  let reward = distanceKm;
+  
+  // Bonus reward for longer distances (encourages sustained movement)
+  if (distanceKm > 5) {
+    reward += distanceKm * 0.1; // 10% bonus for distances over 5km
+  }
+  
+  // Apply rounding to 2 decimal places to avoid tiny fractional tokens
+  return Math.round(reward * 100) / 100;
+}
+
+// Function to calculate cumulative rewards based on user's streak
+export function calculateStreakBonus(
+  baseReward: number, 
+  consecutiveDays: number
+): number {
+  // No bonus for less than 2 days
+  if (consecutiveDays < 2) return baseReward;
+  
+  // Cap the bonus multiplier at 7 days (50% max bonus)
+  const maxDays = 7;
+  const cappedDays = Math.min(consecutiveDays, maxDays);
+  
+  // 10% bonus for each consecutive day (after the first)
+  const bonusMultiplier = 1 + ((cappedDays - 1) * 0.1);
+  
+  return Math.round((baseReward * bonusMultiplier) * 100) / 100;
+}
+
+// Function to calculate time-based rewards (peak hours)
+export function calculateTimeBonus(
+  baseReward: number, 
+  currentTime: Date = new Date()
+): number {
+  const hour = currentTime.getHours();
+  
+  // Early morning (5-7 AM) or evening (6-8 PM) bonus to encourage 
+  // activity during less busy times
+  if ((hour >= 5 && hour <= 7) || (hour >= 18 && hour <= 20)) {
+    return Math.round((baseReward * 1.15) * 100) / 100; // 15% bonus
+  }
+  
+  return baseReward;
 }
 
 // Anti-cheat: Check if location change is reasonable

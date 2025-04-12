@@ -1,5 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Sample phrases for different languages (from the provided TtsSettingsScreen)
+const SAMPLE_PHRASES: Record<string, string> = {
+  'en-US': 'Hello, I wish you a wonderful day.',
+  'en-GB': 'Hello, I wish you a wonderful day.',
+  'es-ES': 'Hola, te deseo un día maravilloso.',
+  'fr-FR': 'Bonjour, je vous souhaite une merveilleuse journée.',
+  'de-DE': 'Hallo, ich wünsche dir einen wunderbaren Tag.',
+  'ja-JP': 'こんにちは、素晴らしい一日をお過ごしください。',
+  'ko-KR': '안녕하세요, 멋진 하루 되세요.',
+  'zh-CN': '你好，祝你有美好的一天。',
+  'ar-SA': 'مرحبًا، أتمنى لك يومًا رائعًا.',
+  'ru-RU': 'Здравствуйте, желаю вам прекрасного дня.',
+  'default': 'Hello, I wish you a wonderful day.',
+};
+
 interface TtsOptions {
   text: string;
   language?: string;
@@ -11,13 +26,21 @@ interface VoiceInfo {
   name: string;
   language: string;
   voiceURI: string;
+  networkRequired?: boolean;
+  default?: boolean;
+}
+
+interface GroupedVoices {
+  [language: string]: VoiceInfo[];
 }
 
 const useTts = () => {
   const [voices, setVoices] = useState<VoiceInfo[]>([]);
+  const [groupedVoices, setGroupedVoices] = useState<GroupedVoices>({});
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedLanguages, setExpandedLanguages] = useState<Record<string, boolean>>({});
 
   // Load available voices
   useEffect(() => {
@@ -36,27 +59,45 @@ const useTts = () => {
           // Some browsers need an event to get voices
           window.speechSynthesis.onvoiceschanged = () => {
             const updatedVoices = window.speechSynthesis.getVoices();
-            const voicesList = updatedVoices.map(voice => ({
-              name: voice.name,
-              language: voice.lang,
-              voiceURI: voice.voiceURI
-            }));
-            setVoices(voicesList);
-            setIsLoading(false);
+            processVoices(updatedVoices);
           };
         } else {
           // Voices already loaded
-          const voicesList = speechVoices.map(voice => ({
-            name: voice.name,
-            language: voice.lang,
-            voiceURI: voice.voiceURI
-          }));
-          setVoices(voicesList);
-          setIsLoading(false);
+          processVoices(speechVoices);
         }
       } catch (err) {
         setError(`Failed to load voices: ${err instanceof Error ? err.message : String(err)}`);
         setIsLoading(false);
+      }
+    };
+
+    const processVoices = (speechVoices: SpeechSynthesisVoice[]) => {
+      // First, create the flat list of all voices
+      const voicesList = speechVoices.map(voice => ({
+        name: voice.name,
+        language: voice.lang,
+        voiceURI: voice.voiceURI,
+        networkRequired: false,
+        default: voice.default
+      }));
+      setVoices(voicesList);
+
+      // Then group them by language
+      const grouped = voicesList.reduce((acc, voice) => {
+        const lang = voice.language || 'Unknown';
+        if (!acc[lang]) acc[lang] = [];
+        acc[lang].push(voice);
+        return acc;
+      }, {} as GroupedVoices);
+      
+      setGroupedVoices(grouped);
+      setIsLoading(false);
+
+      // Set default expanded language to the current browser language
+      const browserLang = navigator.language;
+      const langKey = Object.keys(grouped).find(key => key.startsWith(browserLang.split('-')[0]));
+      if (langKey) {
+        setExpandedLanguages(prev => ({ ...prev, [langKey]: true }));
       }
     };
 
@@ -73,6 +114,14 @@ const useTts = () => {
   const setVoicePreference = useCallback((voiceURI: string) => {
     setSelectedVoice(voiceURI);
     localStorage.setItem('preferredVoice', voiceURI);
+  }, []);
+
+  // Toggle language expansion
+  const toggleLanguage = useCallback((language: string) => {
+    setExpandedLanguages(prev => ({
+      ...prev,
+      [language]: !prev[language]
+    }));
   }, []);
 
   // Speak text
@@ -95,9 +144,18 @@ const useTts = () => {
         const voice = window.speechSynthesis.getVoices().find(v => v.voiceURI === selectedVoice);
         if (voice) {
           utterance.voice = voice;
+          // Make sure to also set the language to avoid mismatches
+          utterance.lang = voice.lang;
         }
       } else if (language) {
         utterance.lang = language;
+        
+        // Try to find a voice for this language
+        const availableVoices = window.speechSynthesis.getVoices();
+        const voiceForLanguage = availableVoices.find(v => v.lang === language);
+        if (voiceForLanguage) {
+          utterance.voice = voiceForLanguage;
+        }
       }
       
       window.speechSynthesis.speak(utterance);
@@ -114,20 +172,38 @@ const useTts = () => {
     window.speechSynthesis.cancel();
   }, []);
 
-  // Get voices by language
-  const getVoicesByLanguage = useCallback((language: string) => {
-    return voices.filter(voice => voice.language.startsWith(language));
+  // Get voice by URI
+  const getVoiceByUri = useCallback((uri: string): VoiceInfo | undefined => {
+    return voices.find(voice => voice.voiceURI === uri);
   }, [voices]);
+
+  // Get sample phrase for language
+  const getSamplePhrase = useCallback((language: string): string => {
+    return SAMPLE_PHRASES[language] || SAMPLE_PHRASES['default'];
+  }, []);
+
+  // Speak sample for testing voice
+  const speakSample = useCallback((voiceURI: string) => {
+    const voice = getVoiceByUri(voiceURI);
+    if (!voice) return false;
+    
+    const sampleText = getSamplePhrase(voice.language);
+    return speak({ text: sampleText, language: voice.language });
+  }, [getVoiceByUri, getSamplePhrase, speak]);
 
   return {
     voices,
+    groupedVoices,
     selectedVoice,
+    expandedLanguages,
     setVoicePreference,
+    toggleLanguage,
     speak,
+    speakSample,
+    getSamplePhrase,
     stop,
     isLoading,
-    error,
-    getVoicesByLanguage
+    error
   };
 };
 

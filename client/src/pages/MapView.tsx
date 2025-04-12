@@ -80,16 +80,43 @@ export default function MapView() {
       
       // Reward the user for their distance if connected to wallet
       if (isConnected && address && signer && totalDistance > 0) {
-        const reward = calculateReward(totalDistance);
+        // Calculate base reward from distance
+        const baseReward = calculateReward(totalDistance);
+        
+        // Apply time-of-day bonus
+        const timeBonus = calculateTimeBonus(baseReward);
+        
+        // Get user's streak (in a real app, this would come from the database)
+        // For demo, we'll assume a streak of 1 day (no streak bonus yet)
+        const userStreak = 1;
+        const finalReward = calculateStreakBonus(timeBonus, userStreak);
         
         try {
-          const result = await rewardUserForDistance(address, totalDistance, signer);
+          // Call blockchain to mint tokens
+          const result = await rewardUserForDistance(address, finalReward, signer);
           
           if (result.success) {
+            // Show detailed reward breakdown
+            let rewardDescription = `Base reward: ${baseReward.toFixed(2)} MOVE tokens\n`;
+            
+            // Add bonus descriptions if applicable
+            if (timeBonus > baseReward) {
+              rewardDescription += `Time bonus: +${(timeBonus - baseReward).toFixed(2)} MOVE tokens\n`;
+            }
+            
+            if (userStreak > 1) {
+              rewardDescription += `Streak bonus: +${(finalReward - timeBonus).toFixed(2)} MOVE tokens\n`;
+            }
+            
+            rewardDescription += `\nTotal: ${finalReward.toFixed(2)} MOVE tokens`;
+            
             toast({
               title: "Tokens Earned!",
-              description: `You earned ${reward.toFixed(2)} MOVE tokens for your activity.`,
+              description: `You earned ${finalReward.toFixed(2)} MOVE tokens for your activity.`,
             });
+            
+            // Show detailed breakdown in console for now
+            console.log('Reward breakdown:', rewardDescription);
             
             // Refetch staking info after minting
             refetchStakingInfo();
