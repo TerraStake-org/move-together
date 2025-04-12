@@ -6,6 +6,7 @@ interface LocationData {
   latitude: number;
   longitude: number;
   timestamp?: number;
+  speed?: number; // Speed in m/s
 }
 
 interface LocationContextType {

@@ -4,6 +4,7 @@ interface Location {
   latitude: number;
   longitude: number;
   timestamp?: number;
+  speed?: number; // Speed in m/s
 }
 
 // Enhanced to track multiple locations over time (for route tracking) and distance
@@ -83,10 +84,35 @@ export const useRealTimeLocation = () => {
       // Start watching position
       const id = navigator.geolocation.watchPosition(
         (position) => {
+          // Create new location with calculated speed or use provided speed if available
+          const now = Date.now();
+          let calculatedSpeed = 0;
+          
+          if (lastLocation && lastLocation.timestamp) {
+            const timeElapsedSeconds = (now - lastLocation.timestamp) / 1000;
+            if (timeElapsedSeconds > 0) {
+              // Calculate distance in meters
+              const distanceKm = calculateDistance(
+                lastLocation.latitude,
+                lastLocation.longitude,
+                position.coords.latitude,
+                position.coords.longitude
+              );
+              const distanceMeters = distanceKm * 1000;
+              
+              // Calculate speed in m/s
+              calculatedSpeed = distanceMeters / timeElapsedSeconds;
+            }
+          }
+          
           const newLocation = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            timestamp: Date.now()
+            timestamp: now,
+            // Use position.coords.speed if available (some browsers support it), otherwise use calculated speed
+            speed: position.coords.speed !== null && position.coords.speed !== undefined 
+                  ? position.coords.speed 
+                  : calculatedSpeed
           };
           
           setLocation(newLocation);
@@ -170,7 +196,8 @@ export const useRealTimeLocation = () => {
         const initialLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          speed: position.coords.speed || 0
         };
         setLocation(initialLocation);
         setLastLocation(initialLocation);
