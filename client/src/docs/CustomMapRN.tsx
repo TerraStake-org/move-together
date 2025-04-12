@@ -34,6 +34,7 @@ import MapView, {
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useRealTimeLocationRN } from '../hooks/useRealTimeLocationRN';
 import { formatDistance } from '../lib/utils';
+import { retroNatureStyle } from './mapStyles';
 
 // Width/height of the device screen
 const { width, height } = Dimensions.get('window');
@@ -575,7 +576,7 @@ const CustomMapRN = () => {
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={initialRegion}
-        customMapStyle={darkMode ? darkMapStyle : lightMapStyle}
+        customMapStyle={darkMode ? darkMapStyle : retroNatureStyle}
         showsUserLocation={true}
         showsMyLocationButton={false}
         showsCompass={true}

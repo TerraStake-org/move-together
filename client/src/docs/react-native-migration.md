@@ -333,26 +333,50 @@ const CustomMapRN = () => {
 };
 ```
 
-The map supports custom styling for both light and dark modes:
+The map supports custom styling with beautiful themes, including a nature-inspired retro style:
 
 ```javascript
-// Dark mode styling example (partial)
-const darkMapStyle = [
+// Import the map styles
+import { retroNatureStyle } from './mapStyles';
+
+// Use the retro nature style in the MapView component
+<MapView
+  customMapStyle={retroNatureStyle}
+  provider={PROVIDER_GOOGLE}
+  // other props...
+>
+  {/* Map content */}
+</MapView>
+```
+
+The retro nature style creates an earthy aesthetic with natural tones:
+
+```javascript
+// Nature-inspired retro style (partial)
+export const retroNatureStyle = [
+  // Earth tones for the base terrain
   {
     "elementType": "geometry",
-    "stylers": [{ "color": "#212121" }]
+    "stylers": [{ "color": "#ebe3cd" }]
   },
+  // Vibrant green for parks and natural areas
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#a5b076" }]
+  },
+  // Golden yellow for highways
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f8c967" }]
+  },
+  // Soft blue-green for water features
   {
     "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#000000" }]
-  },
-  {
-    "featureType": "road",
     "elementType": "geometry.fill",
-    "stylers": [{ "color": "#2c2c2c" }]
-  },
-  // More style elements...
+    "stylers": [{ "color": "#b9d3c2" }]
+  }
 ];
 ```
 
