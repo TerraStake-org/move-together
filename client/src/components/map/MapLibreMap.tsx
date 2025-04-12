@@ -1,253 +1,164 @@
 import React, { useRef, useState, useEffect } from 'react';
-import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import { useLocation } from '@/context/LocationContext';
-import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Define our map style
-const mapStyle: StyleSpecification = {
-  version: 8,
-  sources: {
-    // Use OSM raster tiles as a fallback since our MBTiles file doesn't have worldwide coverage
-    osm: {
-      type: 'raster',
-      tiles: [
-        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-      ],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-      maxzoom: 19
-    },
-    // Keep our vector tiles as an option
-    vectorTiles: {
-      type: 'vector',
-      tiles: [window.location.origin + "/map/tiles/{z}/{x}/{y}.pbf"],
-      minzoom: 0,
-      maxzoom: 14
-    }
-  },
-  layers: [
-    {
-      id: 'background',
-      type: 'background',
-      paint: { 'background-color': '#121212' }
-    },
-    // Use the OSM raster tiles as base layer
-    {
-      id: 'osm-tiles',
-      type: 'raster',
-      source: 'osm',
-      paint: {
-        'raster-opacity': 0.8,
-        'raster-brightness-min': 0.2,
-        'raster-brightness-max': 0.9,
-        'raster-saturation': -0.5,
-        'raster-contrast': 0.1
-      }
-    }
-  ]
-};
+// A simple offline-first map component that doesn't rely on MapLibre GL
+// This component displays a grid background with user position and path visualization
 
 interface MapLibreMapProps {
   location: { latitude: number; longitude: number } | null;
   onToggleMapType: () => void;
 }
 
-// Type for GeoJSON line data
-interface LineStringFeature {
-  type: 'Feature';
-  properties: Record<string, any>;
-  geometry: {
-    type: 'LineString';
-    coordinates: [number, number][];
-  };
-}
-
 const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
-  const marker = useRef<maplibregl.Marker | null>(null);
-  const userPath = useRef<LineStringFeature | null>(null);
-  const [mapReady, setMapReady] = useState(false);
-  const [pathSource, setPathSource] = useState<string | null>(null);
-  const { isTracking, locations } = useLocation();
-
-  // Initialize map
+  const { locations, isTracking } = useLocation();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [viewCenter, setViewCenter] = useState<{x: number, y: number}>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(16); // Default zoom level
+  
+  // Simple mercator projection for lat/lng to pixel coordinates
+  const project = (lat: number, lng: number, centerLat: number, centerLng: number, zoom: number) => {
+    // Simplified projection - not accurate for large distances but works for visualization
+    const scale = Math.pow(2, zoom) * 10;
+    const x = (lng - centerLng) * scale;
+    const y = (lat - centerLat) * scale * -1; // Invert Y since latitude increases northward
+    return { x, y };
+  };
+  
+  // Draw the map
   useEffect(() => {
-    if (mapContainer.current && !map.current) {
-      const initialLocation = location || { latitude: 40.7128, longitude: -74.0060 }; // Default NYC
-      
-      try {
-        // Use direct OSM tiles for reliability
-        const simpleStyle = {
-          version: 8,
-          sources: {
-            osm: {
-              type: 'raster',
-              tiles: [
-                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-              ],
-              tileSize: 256,
-              attribution: '© OpenStreetMap contributors',
-              maxzoom: 19
-            }
-          },
-          layers: [
-            {
-              id: 'osm-tiles',
-              type: 'raster',
-              source: 'osm',
-              paint: {
-                'raster-opacity': 0.8,
-                'raster-saturation': -0.2,
-                'raster-contrast': 0.1
-              }
-            }
-          ]
-        };
-        
-        const newMap = new maplibregl.Map({
-          container: mapContainer.current,
-          style: simpleStyle, // Use the simple style directly
-          center: [initialLocation.longitude, initialLocation.latitude],
-          zoom: 13,
-          attributionControl: false,
-        });
-        
-        // Add basic map controls - after the map loads
-        newMap.on('load', () => {
-          // Add controls after map is loaded
-          newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
-          
-          // Add empty path source and layer
-          newMap.addSource('userPath', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              properties: {},
-              geometry: {
-                type: 'LineString',
-                coordinates: []
-              }
-            }
-          });
-          
-          newMap.addLayer({
-            id: 'path-layer',
-            type: 'line',
-            source: 'userPath',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#3b82f6',
-              'line-width': 5,
-              'line-opacity': 0.8
-            }
-          });
-          
-          console.log("Map loaded successfully");
-          setMapReady(true);
-          setPathSource('userPath');
-        });
-        
-        // Handle map errors
-        newMap.on('error', (e) => {
-          console.error('MapLibre error:', e);
-        });
-        
-        map.current = newMap;
-      } catch (error) {
-        console.error('Error initializing MapLibre map:', error);
-      }
+    if (!canvasRef.current || !location) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Set canvas size to match container
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    
+    // Center coordinates (user's current location)
+    const centerLat = location.latitude;
+    const centerLng = location.longitude;
+    
+    // Clear canvas
+    ctx.fillStyle = '#141414';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    for (let i = -20; i <= 20; i++) {
+      const gridLat = centerLat + (i * 0.001); // grid spacing
+      const { x, y } = project(gridLat, centerLng, centerLat, centerLng, zoom);
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height/2 + y);
+      ctx.lineTo(canvas.width, canvas.height/2 + y);
+      ctx.stroke();
     }
     
-    return () => {
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
+    // Vertical grid lines
+    for (let i = -20; i <= 20; i++) {
+      const gridLng = centerLng + (i * 0.001); // grid spacing
+      const { x, y } = project(centerLat, gridLng, centerLat, centerLng, zoom);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width/2 + x, 0);
+      ctx.lineTo(canvas.width/2 + x, canvas.height);
+      ctx.stroke();
+    }
+    
+    // Draw path
+    if (locations.length >= 2) {
+      ctx.strokeStyle = '#3b82f6'; // blue
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      
+      locations.forEach((loc, idx) => {
+        const { x, y } = project(loc.latitude, loc.longitude, centerLat, centerLng, zoom);
+        if (idx === 0) {
+          ctx.moveTo(canvas.width/2 + x, canvas.height/2 + y);
+        } else {
+          ctx.lineTo(canvas.width/2 + x, canvas.height/2 + y);
+        }
+      });
+      
+      ctx.stroke();
+    }
+    
+    // Draw user location marker
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(canvas.width/2, canvas.height/2, 10, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(canvas.width/2, canvas.height/2, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Add pulse effect
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(canvas.width/2, canvas.height/2, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    
+  }, [location, locations, zoom]);
+  
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        canvasRef.current.width = canvasRef.current.offsetWidth;
+        canvasRef.current.height = canvasRef.current.offsetHeight;
       }
     };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
-  // Update user location marker
-  useEffect(() => {
-    if (!map.current || !mapReady || !location) return;
-    
-    // Create a properly typed [lng, lat] tuple
-    const lngLat: [number, number] = [location.longitude, location.latitude];
-    
-    // Create or update marker
-    if (!marker.current) {
-      // Create custom marker element
-      const el = document.createElement('div');
-      el.className = 'user-location-marker';
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = '#3b82f6';
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 0 10px rgba(59, 130, 246, 0.5)';
-      
-      marker.current = new maplibregl.Marker({
-        element: el,
-        anchor: 'center'
-      })
-        .setLngLat(lngLat)
-        .addTo(map.current);
-    } else {
-      marker.current.setLngLat(lngLat);
-    }
-    
-    // Center map on user location
-    if (isTracking) {
-      map.current.easeTo({
-        center: lngLat,
-        duration: 500
-      });
-    }
-  }, [location, mapReady, isTracking]);
-  
-  // Update path when locations change
-  useEffect(() => {
-    if (!map.current || !mapReady || !pathSource || locations.length < 2) return;
-    
-    // Ensure each coordinate is a [longitude, latitude] tuple with proper typing
-    const coordinates: [number, number][] = locations.map(loc => [loc.longitude, loc.latitude] as [number, number]);
-    
-    // Update path data
-    if (map.current) {
-      const source = map.current.getSource(pathSource);
-      if (source && 'setData' in source) {
-        const geoJsonData: LineStringFeature = {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates
-          }
-        };
-        
-        // Now we can safely call setData with our properly typed GeoJSON
-        (source as any).setData(geoJsonData);
-      }
-    }
-  }, [locations, mapReady, pathSource]);
 
   return (
     <div className="relative w-full h-full bg-slate-900">
-      <div className="absolute inset-0" ref={mapContainer}></div>
+      <canvas 
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full"
+      />
       
-      {/* Optional overlay for status info */}
-      {!mapReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-          <p className="text-lg animate-pulse">Loading map...</p>
+      {/* Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button 
+          onClick={() => setZoom(prev => Math.min(prev + 1, 22))}
+          className="w-10 h-10 bg-slate-800 text-white rounded-md flex items-center justify-center shadow-lg"
+        >
+          +
+        </button>
+        <button 
+          onClick={() => setZoom(prev => Math.max(prev - 1, 10))}
+          className="w-10 h-10 bg-slate-800 text-white rounded-md flex items-center justify-center shadow-lg"
+        >
+          -
+        </button>
+      </div>
+      
+      {/* Info overlay */}
+      <div className="absolute bottom-4 left-4 bg-slate-800/70 text-white p-3 rounded-lg shadow-lg">
+        <div className="text-sm font-mono">
+          <div>Offline Mode</div>
+          {location && (
+            <>
+              <div>Lat: {location.latitude.toFixed(5)}</div>
+              <div>Lng: {location.longitude.toFixed(5)}</div>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
