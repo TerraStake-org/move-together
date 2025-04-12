@@ -8,7 +8,7 @@ interface BottomNavigationProps {
 export default function BottomNavigation({ activeTab }: BottomNavigationProps) {
   // Match the exact tabs from the React Native version
   const tabs = [
-    { id: 'map', icon: 'map', label: 'Map', path: '/' },
+    { id: 'map', icon: 'map', label: 'Map', path: '/map' }, // Use /map path consistently
     { id: 'wallet', icon: 'account_balance_wallet', label: 'Wallet', path: '/wallet' },
     { id: 'rewards', icon: 'redeem', label: 'Rewards', path: '/rewards' },
     { id: 'profile', icon: 'settings', label: 'Settings', path: '/profile' },

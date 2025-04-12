@@ -17,7 +17,7 @@ function Router() {
 
   // Determine active tab from route (matching the React Native navigation structure)
   const getActiveTabFromLocation = (path: string) => {
-    if (path === "/") return "map";
+    if (path === "/" || path === "/map") return "map";
     if (path === "/wallet") return "wallet";
     if (path === "/rewards") return "rewards";
     if (path === "/profile") return "profile";
@@ -29,7 +29,12 @@ function Router() {
   return (
     <>
       <Switch>
-        <Route path="/" component={MapView} />
+        <Route path="/" component={() => {
+          // Redirect root to /map to keep URL consistent with navigation
+          window.location.href = '/map';
+          return null;
+        }} />
+        <Route path="/map" component={MapView} />
         <Route path="/wallet" component={WalletScreen} />
         <Route path="/rewards" component={RewardsPage} />
         <Route path="/profile" component={ProfilePage} /> {/* Settings equivalent in the web version */}
