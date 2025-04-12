@@ -26,7 +26,7 @@ import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
 import { MintedNFT } from '@/web3/LocationNFT';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, Map as MapIcon, Award, Headphones, Plus, Gift, Square, Play, Coins as Coin } from 'lucide-react';
+import { Camera, Map as MapIcon, Award as AwardIcon, Headphones, Plus, Gift, Square, Play, Coins as Coin } from 'lucide-react';
 
 interface MoveStats {
   distance: number;
@@ -323,7 +323,7 @@ export default function MapView() {
         </Button>
         
         <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsNFTCollectionOpen(true)}>
-          <Award size={20} />
+          <AwardIcon size={20} />
         </Button>
         
         <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-12 w-12" onClick={() => setIsVoiceModalOpen(true)}>
@@ -388,7 +388,7 @@ export default function MapView() {
             <span className="text-xs mt-1">Rewards</span>
           </Button>
           <Button variant="ghost" className="flex flex-col items-center h-full rounded-none px-6">
-            <Award size={20} className="text-slate-400" />
+            <AwardIcon size={20} className="text-slate-400" />
             <span className="text-xs mt-1">Settings</span>
           </Button>
         </div>
