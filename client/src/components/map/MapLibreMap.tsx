@@ -5,7 +5,7 @@ import { useLocation } from '@/context/LocationContext';
 // This displays location data and activity information without using any maps
 
 interface MapLibreMapProps {
-  location: { latitude: number; longitude: number } | null;
+  location: { latitude: number; longitude: number; speed?: number; timestamp?: number } | null;
   onToggleMapType: () => void;
 }
 
@@ -76,7 +76,7 @@ const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) 
                 <div className="text-slate-400">Longitude:</div>
                 <div className="font-mono">{formatCoords(location.longitude)}</div>
                 <div className="text-slate-400">Speed:</div>
-                <div>{location.speed ? `${(location.speed * 3.6).toFixed(1)} km/h` : 'Not available'}</div>
+                <div>{location.speed !== undefined ? `${(location.speed * 3.6).toFixed(1)} km/h` : 'Not available'}</div>
                 <div className="text-slate-400">Distance traveled:</div>
                 <div>{totalDistance.toFixed(2)} km</div>
                 <div className="text-slate-400">Current pace:</div>
