@@ -30,7 +30,7 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
   const [address, setAddress] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   
-  // Disconnect wallet - defined first to avoid dependency issues
+  // Disconnect wallet
   const disconnect = useCallback(() => {
     setProvider(null);
     setSigner(null);

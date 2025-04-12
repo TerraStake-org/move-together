@@ -50,10 +50,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex flex-col min-h-screen bg-dark text-white">
-        <Router />
-        <Toaster />
-      </div>
+      <Web3Provider>
+        <div className="flex flex-col min-h-screen bg-dark text-white">
+          <Router />
+          <Toaster />
+        </div>
+      </Web3Provider>
     </QueryClientProvider>
   );
 }
