@@ -349,33 +349,62 @@ import { retroNatureStyle } from './mapStyles';
 </MapView>
 ```
 
-The retro nature style creates an earthy aesthetic with natural tones:
+The enhanced retro nature style creates a rich, detailed outdoor aesthetic with natural tones:
 
 ```javascript
-// Nature-inspired retro style (partial)
+// Nature-inspired retro adventure style (partial)
 export const retroNatureStyle = [
-  // Earth tones for the base terrain
+  // Warm sand base color with increased saturation for terrain
   {
     "elementType": "geometry",
-    "stylers": [{ "color": "#ebe3cd" }]
+    "stylers": [
+      { "color": "#e8ddcb" },
+      { "saturation": 15 }
+    ]
   },
-  // Vibrant green for parks and natural areas
+  // Rich brown text with soft cream outline
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#4a3928" }]
+  },
+  // Varied natural terrain features with texture
+  {
+    "featureType": "landscape.natural.terrain",
+    "elementType": "geometry.fill",
+    "stylers": [
+      { "color": "#c6bb9f" },
+      { "visibility": "on" }
+    ]
+  },
+  // Vibrant green for parks with enhanced saturation
   {
     "featureType": "poi.park",
     "elementType": "geometry.fill",
-    "stylers": [{ "color": "#a5b076" }]
+    "stylers": [
+      { "color": "#a7bd74" },
+      { "saturation": 15 },
+      { "lightness": 5 }
+    ]
   },
-  // Golden yellow for highways
+  // Golden highways with saturation boost
   {
     "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#f8c967" }]
+    "elementType": "geometry.fill",
+    "stylers": [
+      { "color": "#f8c967" },
+      { "lightness": 5 },
+      { "saturation": 15 }
+    ]
   },
-  // Soft blue-green for water features
+  // Vibrant blue-green for water features
   {
     "featureType": "water",
     "elementType": "geometry.fill",
-    "stylers": [{ "color": "#b9d3c2" }]
+    "stylers": [
+      { "color": "#abd9c6" },
+      { "saturation": 10 },
+      { "lightness": 5 }
+    ]
   }
 ];
 ```
