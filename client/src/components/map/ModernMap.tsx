@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from '@/context/LocationContext';
+import { useTheme } from '@/context/ThemeContext';
 import { modernMapStyles } from '@/styles/mapStyle';
 
 interface Location {
@@ -25,6 +26,7 @@ export default function ModernMap({
   onGoToCurrentLocation 
 }: ModernMapProps) {
   const { isTracking, totalDistance } = useLocation();
+  const { theme, colors } = useTheme();
   const [locationHistory, setLocationHistory] = useState<Location[]>([]);
   const [mapZoom, setMapZoom] = useState(14);
   const [mapType, setMapType] = useState<'dark' | 'neon' | 'retro'>('dark');
@@ -264,7 +266,18 @@ export default function ModernMap({
     onZoomOut();
   };
   
+  // Use theme from ThemeContext to determine map type
   const handleToggleMapType = () => {
+    // Map from theme type to our map style
+    const themeToMapStyleMap = {
+      'default': 'dark',
+      'low': 'dark',
+      'moderate': 'retro',
+      'high': 'neon',
+      'extreme': 'neon'
+    };
+    
+    // Allow manual toggle for user control, but initialize from theme
     setMapType(prev => {
       switch (prev) {
         case 'dark': return 'neon';
@@ -274,6 +287,14 @@ export default function ModernMap({
     });
     onToggleMapType();
   };
+  
+  // Set map type based on movement intensity theme
+  useEffect(() => {
+    const mapStyleForTheme = theme === 'default' ? 'dark' : 
+                            theme === 'low' ? 'dark' : 
+                            theme === 'moderate' ? 'retro' : 'neon';
+    setMapType(mapStyleForTheme);
+  }, [theme]);
   
   // Map background patterns for different styles
   const getMapPattern = () => {

@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useLocation } from '@/context/LocationContext';
+import { useLocation } from './LocationContext';
 
-// Define our theme color types
-type ThemeColorScheme = 'default' | 'low' | 'moderate' | 'high' | 'extreme';
+// Types for theme and color scheme
+export type ThemeColorScheme = 'default' | 'low' | 'moderate' | 'high' | 'extreme';
 
-// Define color palette for each intensity level
+// Color palette for different themes
 type ColorPalette = {
   primary: string;
   secondary: string;
@@ -14,51 +14,7 @@ type ColorPalette = {
   gradient: string[];
 };
 
-// Theme color palettes for different intensity levels
-const colorPalettes: Record<ThemeColorScheme, ColorPalette> = {
-  default: {
-    primary: '#FF6347', // Tomato
-    secondary: '#4A90E2', // Blue
-    accent: '#50C878', // Emerald
-    background: '#121212', // Dark
-    text: '#FFFFFF', // White
-    gradient: ['#121212', '#1E1E1E']
-  },
-  low: {
-    primary: '#5D93E1', // Cool blue
-    secondary: '#41B883', // Mint green
-    accent: '#7EB6FF', // Light blue
-    background: '#121212', // Dark
-    text: '#E1E1E1', // Light grey
-    gradient: ['#121215', '#171730']
-  },
-  moderate: {
-    primary: '#41B883', // Mint green
-    secondary: '#F7D44C', // Yellow
-    accent: '#6CC551', // Lime green
-    background: '#121212', // Dark
-    text: '#FFFFFF', // White
-    gradient: ['#111820', '#172218']
-  },
-  high: {
-    primary: '#F7D44C', // Yellow
-    secondary: '#FF8A65', // Orange
-    accent: '#FFD740', // Amber
-    background: '#121212', // Dark
-    text: '#FFFFFF', // White
-    gradient: ['#1A1500', '#231A00']
-  },
-  extreme: {
-    primary: '#FF5252', // Red
-    secondary: '#FF1744', // Bright red
-    accent: '#FF8A80', // Light red
-    background: '#121212', // Dark
-    text: '#FFFFFF', // White
-    gradient: ['#1A0000', '#290000']
-  }
-};
-
-// Define the shape of our theme context
+// Theme context type
 interface ThemeContextType {
   theme: ThemeColorScheme;
   colors: ColorPalette;
@@ -67,72 +23,121 @@ interface ThemeContextType {
   toggleDarkMode: () => void;
 }
 
-// Create the context with default values
+// Create context with default values
 const ThemeContext = createContext<ThemeContextType>({
   theme: 'default',
-  colors: colorPalettes.default,
+  colors: {
+    primary: '#FF6347', // Tomato (default primary color)
+    secondary: '#3A86FF',
+    accent: '#8338EC',
+    background: '#121212',
+    text: '#FFFFFF',
+    gradient: ['#FF6347', '#FF8C42']
+  },
   setTheme: () => {},
   isDarkMode: true,
-  toggleDarkMode: () => {},
+  toggleDarkMode: () => {}
 });
 
 // Custom hook to use the theme context
 export const useTheme = () => useContext(ThemeContext);
 
+// Theme provider props
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
-// Threshold values for speed in km/h to determine intensity levels
-const SPEED_THRESHOLDS = {
-  WALKING: 4, // 4 km/h is typical walking speed
-  JOGGING: 8, // 8 km/h is jogging
-  RUNNING: 12, // 12 km/h is running
-  SPRINTING: 18 // 18 km/h is very fast
-};
-
+// Theme provider component
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
+  // State for theme and dark mode
   const [theme, setTheme] = useState<ThemeColorScheme>('default');
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const { location, isTracking } = useLocation();
   
-  // Calculate current speed based on location updates
+  // Get location data for speed tracking
+  const { location } = useLocation();
+  
+  // Detect movement intensity based on speed and update theme
   useEffect(() => {
-    if (!isTracking || !location || !location.timestamp) return;
+    if (!location || location.speed === undefined) return;
     
-    // Simple speed calculation in km/h
-    // In a real app, we'd use a more sophisticated algorithm that averages recent speeds
-    const speedKmPerHour = location.speed ? location.speed * 3.6 : 0; // Convert m/s to km/h
+    const speed = location.speed; // in m/s
     
-    // Set theme based on movement intensity
-    if (speedKmPerHour < SPEED_THRESHOLDS.WALKING) {
+    // Speed thresholds for different intensity levels
+    // These can be adjusted based on your preference
+    if (speed < 0.5) {  // < 0.5 m/s (< 1.8 km/h) - Standing or walking very slowly
+      setTheme('default');
+    } else if (speed < 1.4) {  // < 1.4 m/s (< 5 km/h) - Walking pace
       setTheme('low');
-    } else if (speedKmPerHour < SPEED_THRESHOLDS.JOGGING) {
+    } else if (speed < 3) {  // < 3 m/s (< 10.8 km/h) - Jogging
       setTheme('moderate');
-    } else if (speedKmPerHour < SPEED_THRESHOLDS.RUNNING) {
+    } else if (speed < 5) {  // < 5 m/s (< 18 km/h) - Running
       setTheme('high');
-    } else if (speedKmPerHour >= SPEED_THRESHOLDS.SPRINTING) {
+    } else {  // >= 5 m/s (>= 18 km/h) - Sprinting or vehicle
       setTheme('extreme');
     }
-    
-  }, [location, isTracking]);
+  }, [location]);
   
   // Toggle dark mode
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => !prev);
-    // Update document class for global styling
-    document.documentElement.classList.toggle('dark', !isDarkMode);
+  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+  
+  // Define color palettes for different intensity levels
+  const getColorPalette = (): ColorPalette => {
+    // Base colors for different intensity levels
+    const themeColors = {
+      default: {
+        primary: '#FF6347', // Tomato
+        secondary: '#3A86FF',
+        accent: '#8338EC',
+        background: isDarkMode ? '#121212' : '#F8F9FA',
+        text: isDarkMode ? '#FFFFFF' : '#212529',
+        gradient: ['#FF6347', '#FF8C42']
+      },
+      low: {
+        primary: '#3A86FF', // Blue
+        secondary: '#4CC9F0',
+        accent: '#3A0CA3',
+        background: isDarkMode ? '#121212' : '#F8F9FA',
+        text: isDarkMode ? '#FFFFFF' : '#212529',
+        gradient: ['#3A86FF', '#4CC9F0']
+      },
+      moderate: {
+        primary: '#06D6A0', // Green
+        secondary: '#1B9AAA',
+        accent: '#118AB2',
+        background: isDarkMode ? '#121212' : '#F8F9FA',
+        text: isDarkMode ? '#FFFFFF' : '#212529',
+        gradient: ['#06D6A0', '#1B9AAA']
+      },
+      high: {
+        primary: '#FFD166', // Yellow/Gold
+        secondary: '#F8C430',
+        accent: '#F79824',
+        background: isDarkMode ? '#121212' : '#F8F9FA',
+        text: isDarkMode ? '#FFFFFF' : '#212529',
+        gradient: ['#FFD166', '#F8C430']
+      },
+      extreme: {
+        primary: '#EF476F', // Pink/Red
+        secondary: '#F15BB5',
+        accent: '#9B5DE5',
+        background: isDarkMode ? '#121212' : '#F8F9FA',
+        text: isDarkMode ? '#FFFFFF' : '#212529',
+        gradient: ['#EF476F', '#F15BB5']
+      }
+    };
+    
+    return themeColors[theme];
   };
   
-  // Prepare the context value
+  // Context value
   const contextValue: ThemeContextType = {
     theme,
-    colors: colorPalettes[theme], // Get the colors for the current theme
+    colors: getColorPalette(),
     setTheme,
     isDarkMode,
     toggleDarkMode
   };
-  
+
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}
