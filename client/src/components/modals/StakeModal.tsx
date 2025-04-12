@@ -10,10 +10,18 @@ import { useToast } from '@/hooks/use-toast';
 interface StakeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  availableBalance: string;
-  currentlyStaked: string;
-  onSuccess: () => void;
-  mode: 'stake' | 'unstake';
+  availableBalance?: string;
+  currentlyStaked?: string;
+  onSuccess?: () => void;
+  mode?: 'stake' | 'unstake';
+  stakingInfo?: {
+    stakedAmount: string;
+    totalStaked: string;
+    rewardRate: string;
+    pendingRewards: string;
+    lastStakedAt: number;
+  } | null;
+  onStakingComplete?: () => Promise<void>;
 }
 
 export default function StakeModal({ 
@@ -22,7 +30,9 @@ export default function StakeModal({
   availableBalance, 
   currentlyStaked,
   onSuccess,
-  mode 
+  mode = 'stake',
+  stakingInfo,
+  onStakingComplete
 }: StakeModalProps) {
   const [amount, setAmount] = useState<string>('0');
   const [loading, setLoading] = useState(false);

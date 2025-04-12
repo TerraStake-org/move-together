@@ -177,7 +177,7 @@ export default function RewardsPage() {
                   ></div>
                 </div>
                 <div className="flex justify-between">
-                  <p className="text-xs text-gray-400">APR: <span className="text-secondary">{apr.toFixed(1)}%</span></p>
+                  <p className="text-xs text-gray-400">APR: <span className="text-secondary">{typeof apr === 'number' ? apr.toFixed(1) : '0.0'}%</span></p>
                   <p className="text-xs text-gray-400">
                     Pending: <span className="text-secondary font-mono">
                       {isLoading || !stakingInfo 
