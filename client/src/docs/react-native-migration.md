@@ -5,6 +5,108 @@ This document outlines how to port the current web implementation to React Nativ
 - react-native-maps (for mapping)
 - expo-location (for location tracking)
 
+## Modern Performance Features
+
+To ensure the app runs efficiently and is future-proof:
+
+### Hermes Engine
+Enable Hermes JavaScript engine for improved startup time, reduced memory usage, and smaller app size:
+
+```json
+// app.json
+{
+  "expo": {
+    "jsEngine": "hermes"
+  }
+}
+```
+
+### TurboModules and Fabric Support
+Ensure libraries are compatible with the New Architecture:
+
+```json
+// app.json
+{
+  "expo": {
+    "jsEngine": "hermes",
+    "experiments": {
+      "turboModules": true,
+      "fabric": true
+    }
+  }
+}
+```
+
+### React 18 Concurrent Features
+Take advantage of React 18's concurrent features:
+
+```jsx
+// App.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-native/js/react-native-implementation';
+
+const root = createRoot(rootTag);
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
+```
+
+### Library Integration
+
+The app will use these modern, high-performance libraries:
+
+#### react-native-maps
+Fully compatible with Fabric architecture when installed properly:
+```bash
+expo install react-native-maps
+```
+
+In app.json:
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to track movement and calculate rewards."
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "YOUR_API_KEY_HERE"
+        }
+      ]
+    ]
+  }
+}
+```
+
+#### react-native-tts
+For advanced text-to-speech capabilities:
+```bash
+expo install react-native-tts
+```
+
+Configure permissions in app.json:
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-speech",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice commands."
+        }
+      ]
+    ]
+  }
+}
+```
+
 ## Location Tracking
 
 ### Web Implementation
@@ -151,5 +253,74 @@ await AsyncStorage.setItem('locationHistory', JSON.stringify(locationHistory));
 const storedHistory = await AsyncStorage.getItem('locationHistory');
 if (storedHistory) {
   setLocationHistory(JSON.parse(storedHistory));
+}
+```
+
+## Performance Optimizations
+
+### React Native List Performance
+
+For activity history lists, use optimized list components:
+
+```jsx
+import { FlatList } from 'react-native';
+
+<FlatList
+  data={activities}
+  renderItem={({ item }) => <ActivityItem activity={item} />}
+  keyExtractor={item => item.id.toString()}
+  initialNumToRender={10}
+  maxToRenderPerBatch={10}
+  windowSize={5}
+  removeClippedSubviews={true}
+/>
+```
+
+### Memoization for Expensive Calculations
+
+Use React.memo and useMemo to prevent unnecessary re-renders and calculations:
+
+```jsx
+// Memoize component
+const ActivityItem = React.memo(({ activity }) => {
+  // Component implementation
+});
+
+// Memoize expensive calculations
+const sortedActivities = useMemo(() => {
+  return [...activities].sort((a, b) => b.timestamp - a.timestamp);
+}, [activities]);
+```
+
+### Image Optimization
+
+Optimize map markers and images:
+
+```jsx
+import FastImage from 'react-native-fast-image';
+
+// Use FastImage instead of Image for better performance
+<FastImage
+  source={require('../assets/marker.png')}
+  style={styles.markerImage}
+  resizeMode={FastImage.resizeMode.contain}
+/>
+```
+
+### Minimize Bridge Traffic
+
+Keep JavaScript and native communication minimal:
+
+```jsx
+// Batch updates instead of sending multiple small updates
+const batchedLocations = [];
+
+// Collect locations
+batchedLocations.push(newLocation);
+
+// Only send to native side when we have enough or after timeout
+if (batchedLocations.length >= 10) {
+  sendLocationsToNative(batchedLocations);
+  batchedLocations = [];
 }
 ```
