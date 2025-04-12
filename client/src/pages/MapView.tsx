@@ -3,8 +3,7 @@ import { useLocation } from '@/context/LocationContext';
 import { useWeb3 } from '@/context/Web3Context';
 import { useTheme } from '@/context/ThemeContext';
 import { usePlaceDiscovery } from '@/context/PlaceDiscoveryContext';
-import ModernMap from '@/components/map/ModernMap';
-import RealTimeLocationMap from '@/components/map/RealTimeLocationMap';
+import SimpleMap from '@/components/map/SimpleMap';
 import ActivityStats from '@/components/ActivityStats';
 import TokenOverview from '@/components/TokenOverview';
 import Achievements from '@/components/Achievements';
@@ -234,8 +233,8 @@ export default function MapView() {
     <div className="flex flex-col h-screen bg-slate-900">
       {/* Fullscreen map container positioned at the bottom layer */}
       <div className="absolute inset-0 w-full h-full z-0">
-        {/* Always use ModernMap since it doesn't have API dependency issues */}
-        <ModernMap 
+        {/* Use SimpleMap instead - it has no external dependencies */}
+        <SimpleMap 
           location={location}
           onZoomIn={() => {}}
           onZoomOut={() => {}}
