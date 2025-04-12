@@ -36,9 +36,19 @@ export default function RewardsPage() {
           const staking = await getStakingInfo(address, provider);
           setStakingInfo(staking);
           
-          // Calculate APR
-          const aprRate = await calculateAPR(provider);
-          setApr(aprRate);
+          // Calculate APR with error handling
+          try {
+            const aprRate = await calculateAPR(provider);
+            if (typeof aprRate === 'number' && !isNaN(aprRate)) {
+              setApr(aprRate);
+            } else {
+              console.warn("Invalid APR value:", aprRate);
+              setApr(0);
+            }
+          } catch (error) {
+            console.error("Error calculating APR:", error);
+            setApr(0);
+          }
           
           // In a real app, we'd fetch from the user's ID, but for demo we'll use 1
           const userId = 1;
@@ -177,7 +187,7 @@ export default function RewardsPage() {
                   ></div>
                 </div>
                 <div className="flex justify-between">
-                  <p className="text-xs text-gray-400">APR: <span className="text-secondary">{typeof apr === 'number' ? apr.toFixed(1) : '0.0'}%</span></p>
+                  <p className="text-xs text-gray-400">APR: <span className="text-secondary">{typeof apr === 'number' && !isNaN(apr) ? apr.toFixed(1) : '0.0'}%</span></p>
                   <p className="text-xs text-gray-400">
                     Pending: <span className="text-secondary font-mono">
                       {isLoading || !stakingInfo 
