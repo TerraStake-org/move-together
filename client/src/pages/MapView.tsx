@@ -419,14 +419,14 @@ export default function MapView() {
           <VoiceCommandButton position="relative" variant="secondary" />
         </div>
         
-        {/* Hidden components - loaded but not displayed */}
-        <div className="hidden">
+        {/* Map components */}
+        <div className="w-full h-[400px] rounded-xl overflow-hidden">
           {mapType === 'modern' ? (
             <ModernMap 
               location={location}
               onZoomIn={() => {}}
               onZoomOut={() => {}}
-              onToggleMapType={() => {}}
+              onToggleMapType={() => setMapType('real-time')}
               onGoToCurrentLocation={() => {}}
             />
           ) : (

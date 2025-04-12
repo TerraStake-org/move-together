@@ -49,7 +49,7 @@ export const mintMoveTokens = async (
     return { success: true, hash: tx.hash };
   } catch (error) {
     console.error('Mint error:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
 
@@ -75,7 +75,7 @@ export const rewardUserForDistance = async (
     return await mintMoveTokens(userAddress, baseReward, signer);
   } catch (error) {
     console.error('Failed to reward user:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
 
@@ -98,7 +98,7 @@ export const getTokenBalance = async (
     };
   } catch (error) {
     console.error('Failed to get token balance:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
 
@@ -130,7 +130,7 @@ export const getStakingInfo = async (
     };
   } catch (error) {
     console.error('Failed to get staking info:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
 
@@ -151,7 +151,7 @@ export const stakeTokens = async (
     return { success: true, hash: tx.hash };
   } catch (error) {
     console.error('Staking error:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
 
@@ -172,6 +172,6 @@ export const unstakeTokens = async (
     return { success: true, hash: tx.hash };
   } catch (error) {
     console.error('Unstaking error:', error);
-    return { success: false, error };
+    return { success: false, error: errorToString(error) };
   }
 };
