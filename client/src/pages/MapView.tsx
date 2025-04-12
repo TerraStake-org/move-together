@@ -317,36 +317,46 @@ export default function MapView() {
           <VoiceCommandButton position="relative" variant="secondary" />
         </div>
         
-        {/* Map Controls */}
-        <div className="absolute top-20 right-4 flex flex-col gap-2">
+        {/* Map Controls - in modern style */}
+        <div className="absolute top-20 right-4 flex flex-col gap-4">
           {/* NFT Mint Button */}
           <Button
             variant="secondary"
-            className="p-3 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
             onClick={handleMintNFT}
             title="Mint Location NFT"
           >
-            <Camera className="h-5 w-5" />
+            <Camera className="h-5 w-5 text-primary" />
           </Button>
           
-          {/* NFT Collection Button */}
+          {/* Badge Collection Button */}
           <Button
             variant="secondary"
-            className="p-3 rounded-full shadow-lg bg-dark-gray hover:bg-dark-gray/90"
+            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
             onClick={handleViewCollection}
-            title="View NFT Collection"
+            title="View Badge Collection"
           >
-            <MapIcon className="h-5 w-5" />
+            <Award className="h-5 w-5 text-amber-500" />
+          </Button>
+          
+          {/* Audio Guide Button */}
+          <Button
+            variant="secondary"
+            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
+            onClick={() => setIsNFTCollectionOpen(true)}
+            title="Audio Guides"
+          >
+            <Headphones className="h-5 w-5 text-emerald-500" />
           </Button>
         </div>
         
         {/* Tracking Button */}
         <Button
           variant="default"
-          className={`absolute bottom-24 right-4 ${isTracking ? 'bg-error hover:bg-error/90' : 'bg-primary hover:bg-primary/90'} p-3 rounded-full shadow-lg`}
+          className={`absolute bottom-28 right-4 ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} p-4 rounded-full shadow-xl`}
           onClick={handleTrackingToggle}
         >
-          <span className="material-icons">{isTracking ? 'stop' : 'play_arrow'}</span>
+          <span className="material-icons text-white">{isTracking ? 'stop' : 'play_arrow'}</span>
         </Button>
       </div>
       

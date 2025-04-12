@@ -29,7 +29,7 @@ export default function ModernMap({
   const { theme, colors } = useTheme();
   const [locationHistory, setLocationHistory] = useState<Location[]>([]);
   const [mapZoom, setMapZoom] = useState(14);
-  const [mapType, setMapType] = useState<'dark' | 'neon' | 'retro'>('dark');
+  const [mapType, setMapType] = useState<'dark' | 'modern' | 'neon' | 'retro'>('modern');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -85,6 +85,11 @@ export default function ModernMap({
         ctx.shadowColor = '#00f2ff';
         ctx.shadowBlur = 10;
         ctx.strokeStyle = '#00f2ff';
+        break;
+      case 'modern':
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#3b82f6';
+        ctx.strokeStyle = '#3b82f6';
         break;
       case 'retro':
         ctx.shadowBlur = 0;
@@ -280,9 +285,11 @@ export default function ModernMap({
     // Allow manual toggle for user control, but initialize from theme
     setMapType(prev => {
       switch (prev) {
+        case 'modern': return 'dark';
         case 'dark': return 'neon';
         case 'neon': return 'retro';
-        case 'retro': return 'dark';
+        case 'retro': return 'modern';
+        default: return 'modern';
       }
     });
     onToggleMapType();
