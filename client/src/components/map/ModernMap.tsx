@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useLocation } from '@/context/LocationContext';
 import { useTheme } from '@/context/ThemeContext';
 import { modernMapStyles } from '@/styles/mapStyle';
+import { Plus, Minus, Layers, MapPin } from 'lucide-react';
 
 interface Location {
   latitude: number;
@@ -203,7 +204,7 @@ export default function ModernMap({
             ctx.strokeStyle = '#00f2ff';
             break;
           case 'retro':
-            ctx.strokeStyle = gradient;
+            ctx.strokeStyle = '#f59e0b';
             break;
           default:
             ctx.strokeStyle = '#3b82f6';
@@ -496,7 +497,7 @@ export default function ModernMap({
             } p-2 rounded-full shadow-lg`}
             onClick={handleZoomIn}
           >
-            <span className="material-icons">add</span>
+            <Plus className="h-5 w-5" />
           </Button>
           <Button
             variant="secondary"
@@ -510,7 +511,7 @@ export default function ModernMap({
             } p-2 rounded-full shadow-lg`}
             onClick={handleZoomOut}
           >
-            <span className="material-icons">remove</span>
+            <Minus className="h-5 w-5" />
           </Button>
           <Button
             variant="secondary"
@@ -524,7 +525,7 @@ export default function ModernMap({
             } p-2 rounded-full shadow-lg`}
             onClick={handleToggleMapType}
           >
-            <span className="material-icons">layers</span>
+            <Layers className="h-5 w-5" />
           </Button>
         </div>
         
@@ -540,7 +541,7 @@ export default function ModernMap({
           } p-2 rounded-full shadow-lg`}
           onClick={onGoToCurrentLocation}
         >
-          <span className="material-icons">my_location</span>
+          <MapPin className="h-5 w-5" />
         </Button>
         
         {/* Zoom Level */}
