@@ -19,13 +19,14 @@ import DiscoveryLayer from '@/components/discovery/DiscoveryLayer';
 import BadgeCollection from '@/components/discovery/BadgeCollection';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { VoiceCommandButton } from '@/components/voice/VoiceCommandButton';
 import { calculateReward, calculateStreakBonus, calculateTimeBonus } from '@/lib/utils';
 import { rewardUserForDistance } from '@/web3/TokenMinter';
 import { getStakingInfo } from '@/web3/MoveStaking';
 import { MintedNFT } from '@/web3/LocationNFT';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, Map as MapIcon, Award, Headphones } from 'lucide-react';
+import { Camera, Map as MapIcon, Award, Headphones, Plus, Gift, Square, Play, Coins as Coin } from 'lucide-react';
 
 interface MoveStats {
   distance: number;
@@ -238,155 +239,204 @@ export default function MapView() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-dark text-light-gray">
-      {/* STATUS BAR */}
-      <div className="bg-dark-gray p-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className={`h-3 w-3 rounded-full mr-2 ${location ? 'bg-secondary animate-pulse' : 'bg-error'}`}></div>
-          <span className="text-sm">{location ? 'GPS Active' : 'GPS Inactive'}</span>
-        </div>
-        <div className="flex items-center space-x-3">
+    <div className="flex flex-col min-h-screen bg-black text-white">
+      {/* Mock UI based on the screenshot - no actual map for now */}
+      <div className="relative h-screen">
+        {/* STATUS BAR */}
+        <div className="p-4 flex justify-between items-center border-b border-gray-800">
           <div className="flex items-center">
-            <span className="material-icons text-sm mr-1">wifi_off</span>
-            <span className="text-sm">{isOfflineModeReady ? 'Offline Maps Ready' : 'Maps not cached'}</span>
+            <span className="text-sm text-gray-400">GPS Inactive</span>
           </div>
-          {isConnected ? (
-            <div className="bg-primary px-3 py-1 rounded-full text-xs flex items-center">
-              <span className="material-icons text-sm mr-1">account_balance_wallet</span>
-              <span>Connected</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-400">Offline Maps Ready</span>
+            <div className="bg-teal-500 px-3 py-1 rounded-full text-xs">
+              Connected
             </div>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="rounded-full flex items-center text-xs" 
-              onClick={handleConnectWallet}
-            >
-              <span className="material-icons text-sm mr-1">account_balance_wallet</span>
-              Connect Wallet
-            </Button>
-          )}
+          </div>
         </div>
-      </div>
-      
-      {/* MAP VIEW */}
-      <div className="relative">
-        {/* Tab buttons for map types */}
-        <div className="absolute top-4 left-0 right-0 z-10 flex justify-center">
-          <div className="bg-dark-gray/80 backdrop-blur-sm rounded-full p-1 flex">
+        
+        {/* Mode Selector */}
+        <div className="flex justify-center py-3">
+          <div className="bg-gray-900 rounded-full p-1 inline-flex">
             <Button
-              variant="ghost"
-              size="sm" 
-              className={`rounded-full text-xs ${mapType === 'modern' ? 'bg-primary text-white' : 'bg-transparent'}`}
-              onClick={() => setMapType('modern')}
+              variant="default"
+              size="sm"
+              className="rounded-full bg-teal-500 hover:bg-teal-600 text-white px-5"
             >
               Modern
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className={`rounded-full text-xs ${mapType === 'real-time' ? 'bg-primary text-white' : 'bg-transparent'}`}
-              onClick={() => setMapType('real-time')}
+              className="rounded-full text-gray-400 px-5"
             >
               Real-Time
             </Button>
           </div>
         </div>
         
-        {/* Conditional rendering of map components with discovery layer */}
-        <DiscoveryLayer
-          mapComponent={
-            mapType === 'modern' ? (
-              <ModernMap 
-                location={location}
-                onZoomIn={() => {}}
-                onZoomOut={() => {}}
-                onToggleMapType={() => {}}
-                onGoToCurrentLocation={() => {}}
-              />
-            ) : (
-              <div className="h-[400px] w-full">
-                <RealTimeLocationMap />
+        {/* Movement Intensity */}
+        <div className="px-4 mt-4">
+          <div className="flex justify-between mb-1">
+            <span className="text-white text-sm">Movement Intensity</span>
+            <span className="text-gray-400 text-sm">0.0 km/h</span>
+          </div>
+          
+          <div className="h-1.5 w-full bg-gray-800 rounded-full relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full flex justify-between px-4 text-xs text-gray-500">
+                <span>Low</span>
+                <span>Moderate</span>
+                <span>High</span>
+                <span>Extreme</span>
               </div>
-            )
-          }
-        />
+            </div>
+          </div>
+          
+          <div className="text-center text-xs text-gray-400 mt-1">
+            Current Intensity: Resting
+          </div>
+        </div>
         
-        {/* Voice Command Button */}
-        <div className="absolute bottom-24 left-4">
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 px-4 mt-10">
+          <div>
+            <div className="text-gray-400 text-sm">Distance</div>
+            <div className="text-white text-xl font-bold">0.00 <span className="text-sm font-normal">km</span></div>
+          </div>
+          
+          <div>
+            <div className="text-gray-400 text-sm">Duration</div>
+            <div className="text-white text-xl font-bold">0:00</div>
+          </div>
+          
+          <div>
+            <div className="text-gray-400 text-sm">Pace</div>
+            <div className="text-white text-xl font-bold">--:--</div>
+          </div>
+        </div>
+        
+        {/* Controls - Right side */}
+        <div className="absolute right-4 top-32 flex flex-col gap-4">
+          <Button
+            variant="secondary"
+            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg"
+            onClick={handleMintNFT}
+          >
+            <Camera className="h-5 w-5 text-blue-400" />
+          </Button>
+          
+          <Button
+            variant="secondary" 
+            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg"
+            onClick={handleViewCollection}
+          >
+            <Award className="h-5 w-5 text-amber-400" />
+          </Button>
+          
+          <Button
+            variant="secondary"
+            className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 border-none shadow-lg" 
+            onClick={() => setIsNFTCollectionOpen(true)}
+          >
+            <Headphones className="h-5 w-5 text-teal-400" />
+          </Button>
+        </div>
+        
+        {/* MOVE Token Section */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-900 px-4 py-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center">
+              <Coin className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-white font-medium">MOVE Token</span>
+            <span className="ml-auto text-gray-400 text-xs">ERC-20</span>
+          </div>
+          
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-gray-400 text-sm">Available Balance</div>
+            <div>
+              <span className="text-lg font-bold">0.00</span>
+              <span className="text-sm text-gray-400 ml-1">MOVE</span>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-gray-400 text-sm">Staked Tokens</div>
+            <div>
+              <span className="text-lg font-bold">0.00</span>
+              <span className="text-sm text-gray-400 ml-1">MOVE</span>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center mb-1">
+            <div className="text-gray-400 text-sm">APR: 12%</div>
+            <div className="text-gray-400 text-sm">
+              Pending: <span className="text-teal-400">0.00 MOVE</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between text-gray-400 text-xs mb-4">
+            <div>1 km = 1 MOVE</div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="border-teal-500 text-teal-500 hover:bg-teal-500/10"
+              onClick={() => setIsStakeModalOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Stake
+            </Button>
+            
+            <Button
+              variant="default"
+              className="bg-teal-500 hover:bg-teal-600"
+            >
+              <Gift className="h-4 w-4 mr-2" />
+              Claim
+            </Button>
+          </div>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="absolute bottom-64 right-4">
+          <Button
+            variant="default"
+            className={`w-14 h-14 rounded-full shadow-xl ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+            onClick={handleTrackingToggle}
+          >
+            {isTracking ? (
+              <Square className="h-6 w-6 text-white" />
+            ) : (
+              <Play className="h-6 w-6 text-white" />
+            )}
+          </Button>
+        </div>
+        
+        <div className="absolute bottom-64 left-4">
           <VoiceCommandButton position="relative" variant="secondary" />
         </div>
         
-        {/* Map Controls - in modern style */}
-        <div className="absolute top-20 right-4 flex flex-col gap-4">
-          {/* NFT Mint Button */}
-          <Button
-            variant="secondary"
-            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
-            onClick={handleMintNFT}
-            title="Mint Location NFT"
-          >
-            <Camera className="h-5 w-5 text-primary" />
-          </Button>
-          
-          {/* Badge Collection Button */}
-          <Button
-            variant="secondary"
-            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
-            onClick={handleViewCollection}
-            title="View Badge Collection"
-          >
-            <Award className="h-5 w-5 text-amber-500" />
-          </Button>
-          
-          {/* Audio Guide Button */}
-          <Button
-            variant="secondary"
-            className="p-3 rounded-full shadow-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-none"
-            onClick={() => setIsNFTCollectionOpen(true)}
-            title="Audio Guides"
-          >
-            <Headphones className="h-5 w-5 text-emerald-500" />
-          </Button>
+        {/* Hidden components - loaded but not displayed */}
+        <div className="hidden">
+          {mapType === 'modern' ? (
+            <ModernMap 
+              location={location}
+              onZoomIn={() => {}}
+              onZoomOut={() => {}}
+              onToggleMapType={() => {}}
+              onGoToCurrentLocation={() => {}}
+            />
+          ) : (
+            <RealTimeLocationMap 
+              location={location}
+              onToggleMapType={() => setMapType('modern')}
+            />
+          )}
+          <DiscoveryLayer />
         </div>
-        
-        {/* Tracking Button */}
-        <Button
-          variant="default"
-          className={`absolute bottom-28 right-4 ${isTracking ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} p-4 rounded-full shadow-xl`}
-          onClick={handleTrackingToggle}
-        >
-          <span className="material-icons text-white">{isTracking ? 'stop' : 'play_arrow'}</span>
-        </Button>
-      </div>
-      
-      {/* STATS DASHBOARD */}
-      <div className="flex-grow bg-dark px-4 py-6 -mt-2 rounded-t-3xl shadow-lg">
-        
-        {/* Movement Intensity Indicator - NEW */}
-        <MovementIntensityIndicator />
-        
-        {/* Activity Stats */}
-        <ActivityStats 
-          distance={moveStats.distance}
-          duration={moveStats.duration}
-          pace={moveStats.pace}
-        />
-        
-        {/* MOVE Token Overview */}
-        <TokenOverview 
-          balance={stakingInfo?.stakedAmount}
-          staked={stakingInfo?.stakedAmount}
-          rewards={stakingInfo?.pendingRewards}
-          onStake={() => setIsStakeModalOpen(true)}
-          onClaim={() => {}}
-        />
-        
-        {/* Achievements Section */}
-        <Achievements />
-        
-        {/* Next Milestone */}
-        <NextMilestone />
       </div>
       
       {/* MODALS */}
