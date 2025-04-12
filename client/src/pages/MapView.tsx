@@ -159,11 +159,14 @@ export default function MapView() {
         const timeReward = baseReward * (1 + (isTimeBonusActive ? 0.15 : 0));
         const finalReward = timeReward * (1 + streakBonus);
         
+        // Calculate streak bonus amount
+        const streakBonusAmount = finalReward - timeReward;
+        
         // Set reward breakdown for modal
         setRewardBreakdown({
           baseReward,
           timeBonus: timeReward,
-          streakBonus: finalReward,
+          streakBonus: streakBonusAmount,
           finalReward: finalReward,
           userStreak: 5, // Placeholder streak days
           isTimeBonusActive
