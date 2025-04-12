@@ -79,22 +79,49 @@ const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) 
       const initialLocation = location || { latitude: 40.7128, longitude: -74.0060 }; // Default NYC
       
       try {
+        // Use direct OSM tiles for reliability
+        const simpleStyle = {
+          version: 8,
+          sources: {
+            osm: {
+              type: 'raster',
+              tiles: [
+                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              ],
+              tileSize: 256,
+              attribution: '© OpenStreetMap contributors',
+              maxzoom: 19
+            }
+          },
+          layers: [
+            {
+              id: 'osm-tiles',
+              type: 'raster',
+              source: 'osm',
+              paint: {
+                'raster-opacity': 0.8,
+                'raster-saturation': -0.2,
+                'raster-contrast': 0.1
+              }
+            }
+          ]
+        };
+        
         const newMap = new maplibregl.Map({
           container: mapContainer.current,
-          style: mapStyle,
+          style: simpleStyle, // Use the simple style directly
           center: [initialLocation.longitude, initialLocation.latitude],
-          zoom: 14,
+          zoom: 13,
           attributionControl: false,
         });
         
-        // Add basic map controls
-        newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
-        newMap.addControl(new maplibregl.GeolocateControl({
-          positionOptions: { enableHighAccuracy: true },
-          trackUserLocation: true
-        }), 'top-right');
-        
+        // Add basic map controls - after the map loads
         newMap.on('load', () => {
+          // Add controls after map is loaded
+          newMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+          
           // Add empty path source and layer
           newMap.addSource('userPath', {
             type: 'geojson',
@@ -123,17 +150,14 @@ const MapLibreMap: React.FC<MapLibreMapProps> = ({ location, onToggleMapType }) 
             }
           });
           
-          // Add markers layer
-          newMap.addSource('markers', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
-          
+          console.log("Map loaded successfully");
           setMapReady(true);
           setPathSource('userPath');
+        });
+        
+        // Handle map errors
+        newMap.on('error', (e) => {
+          console.error('MapLibre error:', e);
         });
         
         map.current = newMap;
