@@ -489,15 +489,15 @@ export default function SimpleMap({
           {mapType.toUpperCase()}
         </div>
         
-        {/* Bottom gradient overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent z-30"></div>
+        {/* Bottom gradient overlay - make it taller to prevent overlapping with controls */}
+        <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/70 to-transparent z-20"></div>
         
-        {/* Map controls */}
-        <div className="absolute top-4 right-4 flex flex-col space-y-2 z-40">
+        {/* Map controls - reorganized to prevent overlapping */}
+        <div className="absolute top-20 right-4 flex flex-col space-y-2 z-40">
           <Button
             variant="secondary"
             size="icon"
-            className="bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white"
+            className="bg-black/70 backdrop-blur-sm hover:bg-black/90 text-white shadow-lg h-10 w-10"
             onClick={handleZoomIn}
           >
             <Plus className="h-4 w-4" />
@@ -505,7 +505,7 @@ export default function SimpleMap({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white"
+            className="bg-black/70 backdrop-blur-sm hover:bg-black/90 text-white shadow-lg h-10 w-10"
             onClick={handleZoomOut}
           >
             <Minus className="h-4 w-4" />
@@ -513,26 +513,54 @@ export default function SimpleMap({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white"
+            className="bg-black/70 backdrop-blur-sm hover:bg-black/90 text-white shadow-lg h-10 w-10"
             onClick={handleToggleMapType}
           >
             <Layers className="h-4 w-4" />
           </Button>
         </div>
         
-        {/* Current location button */}
+        {/* Current location button - moved higher to prevent overlap with bottom nav */}
         <Button 
           variant="secondary"
-          className="absolute bottom-24 right-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full z-40"
+          className="absolute bottom-40 right-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full z-40 shadow-lg flex items-center gap-1 px-3 py-2"
           onClick={onGoToCurrentLocation}
         >
-          <MapPin className="h-4 w-4 mr-1" />
-          Center
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm">Center</span>
         </Button>
         
-        {/* Zoom level indicator */}
-        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-2 py-1 text-xs rounded z-40">
-          Zoom: {mapZoom}
+        {/* Stats panel at the bottom */}
+        <div className="absolute bottom-20 left-4 right-4 flex justify-between items-center z-40">
+          {/* Zoom level indicator in better position */}
+          <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-2 text-sm rounded-lg shadow-lg flex items-center gap-1">
+            <Layers className="h-4 w-4 opacity-70" />
+            <span>Zoom: <strong>{mapZoom}</strong></span>
+          </div>
+          
+          {/* Map mode & distance panel */}
+          {isTracking && (
+            <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-2 text-sm rounded-lg shadow-lg flex items-center gap-2">
+              <div className="flex items-center">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
+                <span>{totalDistance.toFixed(2)} km</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Clear back button at top left */}
+        <div className="absolute top-16 left-4 z-40">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-black/70 backdrop-blur-sm hover:bg-black/90 text-white shadow-lg flex items-center gap-1.5 px-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+            <span className="text-sm">Back</span>
+          </Button>
         </div>
       </div>
     </div>

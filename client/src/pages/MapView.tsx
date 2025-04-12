@@ -291,8 +291,8 @@ export default function MapView() {
           </div>
         </div>
         
-        {/* Movement intensity indicator */}
-        <div className="px-4 py-2">
+        {/* Movement intensity indicator - positioned in dedicated space */}
+        <div className="px-4 py-2 mb-4 z-30">
           <MovementIntensityIndicator />
         </div>
       </div>
