@@ -34,7 +34,30 @@ npm run dev
 
 ## Offline Maps
 
-The application supports offline map functionality through MBTiles format. Download compatible map tiles from OpenMapTiles.
+The application supports offline map functionality through MBTiles format. Map tiles can be downloaded from [OpenMapTiles](https://openmaptiles.org/).
+
+### Map Tile Setup
+
+1. Download map tiles in MBTiles format (.mbtiles files)
+2. Place the files in the `tiles` directory
+3. Rename your primary map file to `world.mbtiles` or update the path in `server/mapTileServer.ts`
+
+For quick testing, you can use the provided script:
+```bash
+# Make the script executable
+chmod +x tiles/download-sample-tiles.sh
+
+# Run the script to download a sample map
+./tiles/download-sample-tiles.sh
+```
+
+### GDAL and MapServer Libraries
+
+For advanced map processing, the application can leverage GDAL and MapServer libraries. See the documentation in the `tiles` directory for installation instructions and usage details.
+
+The recommended versions are:
+- GDAL 3.9.2 with MapServer 8.2.2 (for newer systems)
+- GDAL 3.9 with MapServer 8.0 (alternative version)
 
 ## License
 
