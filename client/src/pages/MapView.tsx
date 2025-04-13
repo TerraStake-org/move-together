@@ -48,6 +48,7 @@ export default function MapView() {
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showIntensityIndicator, setShowIntensityIndicator] = useState(false);
+  const [showStatsPanel, setShowStatsPanel] = useState(true);
   const [rewardBreakdown, setRewardBreakdown] = useState<any>({
     baseReward: 0,
     timeBonus: 0,
@@ -330,51 +331,53 @@ export default function MapView() {
         </div>
       )}
       
-      {/* Stats Dashboard - well spaced and organized with gap - Adjusted spacing */}
-      <div className="fixed top-[280px] left-0 right-0 z-30 px-4">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Left column */}
-          <div className="space-y-3">
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-              <h4 className="text-xs text-slate-400 font-medium">Distance</h4>
-              <p className="text-xl font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-sm text-slate-400">km</span></p>
-            </div>
-            
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-              <h4 className="text-xs text-slate-400 font-medium">Pace</h4>
-              <p className="text-xl font-bold text-white">{formatPace(moveStats.pace)}</p>
-            </div>
-          </div>
-          
-          {/* Right column */}
-          <div className="space-y-3">
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-              <h4 className="text-xs text-slate-400 font-medium">Duration</h4>
-              <p className="text-xl font-bold text-white">{formatDuration(moveStats.duration)}</p>
-            </div>
-            
-            <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-              <h4 className="text-xs text-slate-400 font-medium">Status</h4>
-              <div className="flex items-center">
-                {isTracking ? (
-                  <div className="flex items-center gap-1 text-emerald-500">
-                    <span className="animate-pulse rounded-full h-2 w-2 bg-emerald-500"></span> 
-                    <span>Active</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 text-slate-400">
-                    <Square size={10} /> 
-                    <span>Paused</span>
-                  </div>
-                )}
+      {/* Stats Dashboard - Only visible when toggled */}
+      {showStatsPanel && (
+        <div className="fixed top-[280px] left-0 right-0 z-30 px-4">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Left column */}
+            <div className="space-y-3">
+              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium">Distance</h4>
+                <p className="text-xl font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-sm text-slate-400">km</span></p>
               </div>
-              <div className="text-xs text-slate-400 mt-1.5 truncate">
-                {location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : 'No location data'}
+              
+              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium">Pace</h4>
+                <p className="text-xl font-bold text-white">{formatPace(moveStats.pace)}</p>
+              </div>
+            </div>
+            
+            {/* Right column */}
+            <div className="space-y-3">
+              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium">Duration</h4>
+                <p className="text-xl font-bold text-white">{formatDuration(moveStats.duration)}</p>
+              </div>
+              
+              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium">Status</h4>
+                <div className="flex items-center">
+                  {isTracking ? (
+                    <div className="flex items-center gap-1 text-emerald-500">
+                      <span className="animate-pulse rounded-full h-2 w-2 bg-emerald-500"></span> 
+                      <span>Active</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-slate-400">
+                      <Square size={10} /> 
+                      <span>Paused</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-slate-400 mt-1.5 truncate">
+                  {location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : 'No location data'}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       
       {/* Side action buttons - moved to avoid overlapping */}
       <div className="fixed right-4 top-[420px] z-30 flex flex-col gap-3">
@@ -393,6 +396,21 @@ export default function MapView() {
             <path d="M18 12h2"></path>
             <path d="M6 16h12"></path>
             <path d="M6 8h12"></path>
+          </svg>
+        </Button>
+        
+        {/* Stats panel toggle button */}
+        <Button 
+          size="icon" 
+          variant="secondary" 
+          className={`rounded-full ${showStatsPanel ? 'bg-green-600 hover:bg-green-700' : 'bg-black/70 hover:bg-black/90'} h-11 w-11 shadow-lg`} 
+          onClick={() => setShowStatsPanel(!showStatsPanel)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3v18h18"></path>
+            <path d="M18 17V9"></path>
+            <path d="M13 17V5"></path>
+            <path d="M8 17v-3"></path>
           </svg>
         </Button>
         
