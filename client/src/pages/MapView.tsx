@@ -331,47 +331,47 @@ export default function MapView() {
         </div>
       )}
       
-      {/* Stats Dashboard - Only visible when toggled */}
+      {/* Stats Dashboard - Only visible when toggled - Smaller Size */}
       {showStatsPanel && (
         <div className="fixed top-[280px] left-0 right-0 z-30 px-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {/* Left column */}
-            <div className="space-y-3">
-              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-                <h4 className="text-xs text-slate-400 font-medium">Distance</h4>
-                <p className="text-xl font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-sm text-slate-400">km</span></p>
+            <div className="space-y-2">
+              <div className="bg-black/70 backdrop-blur-sm py-2 px-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium text-[10px]">Distance</h4>
+                <p className="text-base font-bold text-white">{moveStats.distance.toFixed(2)} <span className="text-xs text-slate-400">km</span></p>
               </div>
               
-              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-                <h4 className="text-xs text-slate-400 font-medium">Pace</h4>
-                <p className="text-xl font-bold text-white">{formatPace(moveStats.pace)}</p>
+              <div className="bg-black/70 backdrop-blur-sm py-2 px-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium text-[10px]">Pace</h4>
+                <p className="text-base font-bold text-white">{formatPace(moveStats.pace)}</p>
               </div>
             </div>
             
             {/* Right column */}
-            <div className="space-y-3">
-              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-                <h4 className="text-xs text-slate-400 font-medium">Duration</h4>
-                <p className="text-xl font-bold text-white">{formatDuration(moveStats.duration)}</p>
+            <div className="space-y-2">
+              <div className="bg-black/70 backdrop-blur-sm py-2 px-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium text-[10px]">Duration</h4>
+                <p className="text-base font-bold text-white">{formatDuration(moveStats.duration)}</p>
               </div>
               
-              <div className="bg-black/70 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-slate-800">
-                <h4 className="text-xs text-slate-400 font-medium">Status</h4>
+              <div className="bg-black/70 backdrop-blur-sm py-2 px-3 rounded-lg shadow-lg border border-slate-800">
+                <h4 className="text-xs text-slate-400 font-medium text-[10px]">Status</h4>
                 <div className="flex items-center">
                   {isTracking ? (
-                    <div className="flex items-center gap-1 text-emerald-500">
-                      <span className="animate-pulse rounded-full h-2 w-2 bg-emerald-500"></span> 
+                    <div className="flex items-center gap-1 text-emerald-500 text-xs">
+                      <span className="animate-pulse rounded-full h-1.5 w-1.5 bg-emerald-500"></span> 
                       <span>Active</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-slate-400">
-                      <Square size={10} /> 
+                    <div className="flex items-center gap-1 text-slate-400 text-xs">
+                      <Square size={8} /> 
                       <span>Paused</span>
                     </div>
                   )}
                 </div>
-                <div className="text-xs text-slate-400 mt-1.5 truncate">
-                  {location ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` : 'No location data'}
+                <div className="text-[9px] text-slate-400 mt-1 truncate">
+                  {location ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'No location data'}
                 </div>
               </div>
             </div>

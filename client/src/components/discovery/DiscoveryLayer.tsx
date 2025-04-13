@@ -49,40 +49,53 @@ export default function DiscoveryLayer() {
     <>
       {/* Active Place Detail Panel */}
       {activePlace && (
-        <Card className="absolute bottom-32 left-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden z-50 border-0">
-          <CardContent className="p-4">
+        <Card className="absolute bottom-32 left-4 right-4 bg-black/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden z-50 border-0 text-white">
+          <CardContent className="p-4 relative">
+            {/* Close/Dismiss Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-1 right-1 h-7 w-7 rounded-full text-white hover:bg-white/20 z-10"
+              onClick={() => setSelectedPlace(null)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </Button>
+            
             <div className="flex items-start gap-3">
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shrink-0">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shrink-0">
                 {currentPlayingAudio === activePlace.id ? (
-                  <Music className="h-6 w-6 text-white animate-pulse" />
+                  <Music className="h-5 w-5 text-white animate-pulse" />
                 ) : (
-                  <MapPin className="h-6 w-6 text-white" />
+                  <MapPin className="h-5 w-5 text-white" />
                 )}
               </div>
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold truncate">
+                  <h3 className="text-base font-semibold truncate">
                     {activePlace.name}
                   </h3>
                   <Badge 
                     variant="secondary" 
-                    className="ml-2 shrink-0 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                    className="ml-2 shrink-0 bg-blue-900/50 text-blue-100 text-xs"
                   >
                     {Math.round(activePlace.distance)}m away
                   </Badge>
                 </div>
                 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                <p className="text-xs text-gray-300 mt-1 line-clamp-2">
                   {activePlace.description}
                 </p>
                 
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2 mt-2">
                   {/* Audio Guide Button */}
                   <Button
                     variant={currentPlayingAudio === activePlace.id ? "default" : "outline"}
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 h-8 text-xs"
                     onClick={() => {
                       if (currentPlayingAudio === activePlace.id) {
                         stopAudioGuide();
@@ -91,7 +104,7 @@ export default function DiscoveryLayer() {
                       }
                     }}
                   >
-                    <Music className="h-4 w-4 mr-2" />
+                    <Music className="h-3 w-3 mr-1" />
                     {currentPlayingAudio === activePlace.id ? "Stop Guide" : "Play Audio Guide"}
                   </Button>
                   
@@ -100,10 +113,10 @@ export default function DiscoveryLayer() {
                     <Button
                       variant="default"
                       size="sm"
-                      className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                      className="flex-1 h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
                       onClick={() => collectBadge(activePlace.id)}
                     >
-                      <Award className="h-4 w-4 mr-2" />
+                      <Award className="h-3 w-3 mr-1" />
                       Collect Badge
                     </Button>
                   )}
@@ -114,9 +127,9 @@ export default function DiscoveryLayer() {
                       variant="ghost"
                       size="sm"
                       disabled
-                      className="flex-1"
+                      className="flex-1 h-8 text-xs"
                     >
-                      <Award className="h-4 w-4 mr-2 text-emerald-500" />
+                      <Award className="h-3 w-3 mr-1 text-emerald-500" />
                       Badge Collected
                     </Button>
                   )}
