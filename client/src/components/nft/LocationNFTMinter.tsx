@@ -118,7 +118,15 @@ export default function LocationNFTMinter({
       toast({
         title: "Minting Failed",
         description: "There was an error minting your NFT. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
+        action: (
+          <button 
+            onClick={() => toast.dismiss()}
+            className="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-md text-xs"
+          >
+            Close
+          </button>
+        )
       });
     } finally {
       setIsMinting(false);

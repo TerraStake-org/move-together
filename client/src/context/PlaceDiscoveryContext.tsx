@@ -119,7 +119,16 @@ export const PlaceDiscoveryProvider = ({ children }: PlaceDiscoveryProviderProps
     toast({
       title: 'Badge Collected!',
       description: `You've earned the ${place.badgeNFT.name}!`,
-      variant: 'default'
+      variant: 'default',
+      // Add action for explicit dismissal
+      action: (
+        <button 
+          onClick={() => toast.dismiss()}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
+        >
+          Close
+        </button>
+      )
     });
     
     return true;
