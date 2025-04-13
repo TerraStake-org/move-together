@@ -47,6 +47,7 @@ export default function MapView() {
   const [isNFTMinterOpen, setIsNFTMinterOpen] = useState(false);
   const [isNFTCollectionOpen, setIsNFTCollectionOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showIntensityIndicator, setShowIntensityIndicator] = useState(false);
   const [rewardBreakdown, setRewardBreakdown] = useState<any>({
     baseReward: 0,
     timeBonus: 0,
@@ -322,10 +323,12 @@ export default function MapView() {
         </div>
       </div>
 
-      {/* Dashboard content - Movement intensity indicator - Moved down for more space */}
-      <div className="fixed top-36 left-0 right-0 z-30 px-4">
-        <MovementIntensityIndicator />
-      </div>
+      {/* Dashboard content - Movement intensity indicator - Only visible when toggled */}
+      {showIntensityIndicator && (
+        <div className="fixed top-36 left-0 right-0 z-30 px-4">
+          <MovementIntensityIndicator />
+        </div>
+      )}
       
       {/* Stats Dashboard - well spaced and organized with gap - Adjusted spacing */}
       <div className="fixed top-[280px] left-0 right-0 z-30 px-4">
@@ -375,6 +378,24 @@ export default function MapView() {
       
       {/* Side action buttons - moved to avoid overlapping */}
       <div className="fixed right-4 top-[420px] z-30 flex flex-col gap-3">
+        {/* Movement intensity button */}
+        <Button 
+          size="icon" 
+          variant="secondary" 
+          className={`rounded-full ${showIntensityIndicator ? 'bg-blue-600 hover:bg-blue-700' : 'bg-black/70 hover:bg-black/90'} h-11 w-11 shadow-lg`} 
+          onClick={() => setShowIntensityIndicator(!showIntensityIndicator)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12h2"></path>
+            <path d="M6 12h2"></path>
+            <path d="M10 12h2"></path>
+            <path d="M14 12h2"></path>
+            <path d="M18 12h2"></path>
+            <path d="M6 16h12"></path>
+            <path d="M6 8h12"></path>
+          </svg>
+        </Button>
+        
         <Button size="icon" variant="secondary" className="rounded-full bg-black/70 hover:bg-black/90 h-11 w-11 shadow-lg" onClick={() => setIsNFTMinterOpen(true)}>
           <Camera size={18} />
         </Button>
