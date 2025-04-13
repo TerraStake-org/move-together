@@ -7,9 +7,26 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
+import { useEffect } from "react"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toasts, dismiss } = useToast()
+  
+  // Add an event listener for custom toast dismissal
+  useEffect(() => {
+    const handleDismissAll = () => {
+      // Dismiss all toasts
+      dismiss();
+    };
+    
+    // Listen for our custom event
+    document.addEventListener('toast-dismiss-all', handleDismissAll);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('toast-dismiss-all', handleDismissAll);
+    };
+  }, [dismiss]);
 
   return (
     <ToastProvider>

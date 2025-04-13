@@ -107,7 +107,17 @@ export const PlaceDiscoveryProvider = ({ children }: PlaceDiscoveryProviderProps
       toast({
         title: 'No badge available',
         description: 'This location does not have a badge to collect.',
-        variant: 'destructive'
+        variant: 'destructive',
+        action: (
+          <button 
+            onClick={() => {
+              document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+            }}
+            className="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-md text-xs"
+          >
+            Close
+          </button>
+        )
       });
       return false;
     }
@@ -120,10 +130,14 @@ export const PlaceDiscoveryProvider = ({ children }: PlaceDiscoveryProviderProps
       title: 'Badge Collected!',
       description: `You've earned the ${place.badgeNFT.name}!`,
       variant: 'default',
-      // Add action for explicit dismissal
+      // Add action with proper dismiss functionality
       action: (
         <button 
-          onClick={() => toast.dismiss()}
+          onClick={() => {
+            // Use the toast dismiss method from useToast hook context
+            // instead of trying to call toast.dismiss()
+            document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
         >
           Close
@@ -141,7 +155,17 @@ export const PlaceDiscoveryProvider = ({ children }: PlaceDiscoveryProviderProps
       toast({
         title: 'No AR content available',
         description: 'This location does not have augmented reality content.',
-        variant: 'destructive'
+        variant: 'destructive',
+        action: (
+          <button 
+            onClick={() => {
+              document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+            }}
+            className="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-md text-xs"
+          >
+            Close
+          </button>
+        )
       });
       return;
     }
@@ -150,7 +174,17 @@ export const PlaceDiscoveryProvider = ({ children }: PlaceDiscoveryProviderProps
     toast({
       title: 'AR View',
       description: `Launching AR view for ${place.name}...`,
-      variant: 'default'
+      variant: 'default',
+      action: (
+        <button 
+          onClick={() => {
+            document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
+        >
+          Close
+        </button>
+      )
     });
   };
   

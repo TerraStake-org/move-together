@@ -104,7 +104,18 @@ export default function LocationNFTMinter({
         toast({
           title: "NFT Minted Successfully!",
           description: `Your location "${name}" has been minted as an NFT.`,
-          variant: "default"
+          variant: "default",
+          action: (
+            <button 
+              onClick={() => {
+                // Use custom event to dismiss toasts since we can't directly call dismiss
+                document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+              }}
+              className="bg-green-800 hover:bg-green-900 text-white px-3 py-1 rounded-md text-xs"
+            >
+              Close
+            </button>
+          )
         });
         
         if (onSuccess) {
@@ -121,7 +132,10 @@ export default function LocationNFTMinter({
         variant: "destructive",
         action: (
           <button 
-            onClick={() => toast.dismiss()}
+            onClick={() => {
+              // Use custom event to dismiss toasts since we can't directly call dismiss
+              document.dispatchEvent(new CustomEvent('toast-dismiss-all'))
+            }}
             className="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-md text-xs"
           >
             Close
